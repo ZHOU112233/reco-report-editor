@@ -119,7 +119,7 @@ table.t th{color:var(--muted);font-size:12px}
 .tplcard b{display:block;margin-bottom:3px}
 .del{color:var(--danger);font-size:12px;margin-left:4px;text-decoration:none}.del:hover{text-decoration:underline}
 .tplhead{flex-wrap:wrap}.tplhead button.sm{padding:3px 6px}
-.tpled .row{display:flex;gap:6px;align-items:center;margin-bottom:5px}.tpled .row>label{width:36px;color:var(--muted);font-size:12.5px;text-align:right}.tpled input.l{width:230px}.tpled input.h{flex:1}.tpled .head{font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:2px}
+.tpled .row{display:flex;gap:6px;align-items:center;margin-bottom:5px}.tpled .row>label{width:36px;color:var(--muted);font-size:12.5px;text-align:right}.tpled input.l{width:230px}.tpled input.h{flex:1}.tpled .head{font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:2px}.tpled .paste{background:var(--bg);border-radius:10px;padding:10px 12px;margin:4px 0 12px}.tpled .paste .row{margin-bottom:0}.tpled textarea{display:block;width:100%;min-height:118px;font:inherit;font-size:13px;line-height:1.5;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;margin:8px 0;background:#fff}
 .tplcard span{font-size:12px;color:var(--muted)}
 @media print{body>*{display:none!important}#printArea{display:block!important}#printArea .paper{box-shadow:none;width:auto;min-height:0;margin:0}#printArea .frow .h,#printArea .frow .x,#printArea .ctl,#printArea .addrow,#printArea .chips{display:none!important}#printArea .frow{grid-template-columns:minmax(90px,max-content) 1fr;gap:0 8px;padding:1px 0;margin:0}#printArea .frow .v{min-height:0}#printArea .pagebreak{page-break-after:always;border:none;height:0}#printArea .pagebreak span{display:none}#printArea .frow .v:empty::before{content:'【待补充】';background:none;border:none;color:#b45309}}
 </style>
@@ -447,13 +447,85 @@ function applyTplById(id,replace){const t=allTpls().find(x=>x.id===id);if(t)appl
 /* ===== 模板编辑器：改名、改说明、增删改字段与提示、排序；内置模板可恢复默认，自定义模板可删除 ===== */
 let TD=null;
 function editTpl(id){const t=allTpls().find(x=>x.id===id);if(!t)return;TD={id:t.id,name:t.name,note:t.note||'',builtin:!!t.builtin,fields:t.fields.map(tf).map(x=>({l:x.label,h:x.hint}))};renderTplEditor()}
-function newTpl(fromDoc){TD={id:'u'+Date.now(),name:'',note:'',builtin:false,isNew:true,fields:fromDoc&&S.fields.length?S.fields.map(f=>({l:f.label,h:f.hint||''})):[{l:'',h:''}]};renderTplEditor();const n=$('tdName');n&&n.focus()}
+function newTpl(fromDoc){TD={id:'u'+Date.now(),name:'',note:'',builtin:false,isNew:true,showPaste:!fromDoc,raw:'',fields:fromDoc&&S.fields.length?S.fields.map(f=>({l:f.label,h:f.hint||''})):[{l:'',h:''}]};renderTplEditor();const n=$('tdName');n&&n.focus()}
 function renderTplEditor(){const t=TD;$('modalBox').innerHTML=`<h3>${t.isNew?'新建模板':'编辑模板'} <small class="hint">字段名就是文档里的标题；提示只在字段为空时灰字显示，不会导出</small></h3>
 <div class="tpled"><div class="row"><label>名称</label><input id="tdName" value="${esc(t.name)}" placeholder="如：某某客户" style="width:230px" oninput="TD.name=this.value"><label style="width:auto">说明</label><input value="${esc(t.note)}" placeholder="写给顾问看的填写要求（可空）" style="flex:1" oninput="TD.note=this.value"></div>
+<div class="paste"><div class="row" style="justify-content:space-between"><b style="font-size:13px">从文字生成字段 <span class="hint" style="font-weight:400">把客户发来的要求原文粘贴进来，不用逐项手打</span></b><button class="sm ghost" onclick="tdTogglePaste()">${t.showPaste?'收起':'展开'}</button></div>${t.showPaste?`<textarea id="tdRaw" placeholder="粘贴模板原文，每项一行，或带 一、二、／1、2、／1) 2) 这类编号；第一行若是标题会作为模板名称，「注意：」开头的行进说明。
+例：
+美团推荐所需信息
+一、在职情况
+二、离职原因（在职的话看机会原因）
+五、期望工资（）元/年
+注意：核实最后一段经历时间" oninput="TD.raw=this.value" onpaste="setTimeout(()=>tdRecognize(true),0)">${esc(t.raw||'')}</textarea><div class="row"><button class="sm" onclick="tdRecognize()">识别字段</button><button class="sm ghost" onclick="$('tdFile').click()">上传 .txt / .docx / .pdf</button><input id="tdFile" type="file" accept=".txt,.md,.docx,.pdf" style="display:none" onchange="tdFromFile(this.files[0]);this.value=''"><span class="hint">识别后下面每一项都还能改</span></div>`:''}</div>
 <div class="row head"><span style="width:36px"></span><span style="width:230px">字段名</span><span style="flex:1">提示 / 填写要求（可空）</span><span style="width:96px"></span></div>
 <div id="tdRows">${t.fields.map((f,i)=>`<div class="row"><span class="hint" style="width:36px;text-align:right">${i+1}.</span><input class="l" value="${esc(f.l)}" placeholder="字段名" oninput="TD.fields[${i}].l=this.value"><input class="h" value="${esc(f.h)}" placeholder="提示" oninput="TD.fields[${i}].h=this.value"><button class="sm ghost" onclick="tdMove(${i},-1)" title="上移">↑</button><button class="sm ghost" onclick="tdMove(${i},1)" title="下移">↓</button><button class="sm ghost danger" onclick="tdDel(${i})" title="删除">✕</button></div>`).join('')}</div>
 <div style="display:flex;gap:6px;margin-top:6px"><button class="sm" onclick="tdAdd()">+ 添加字段</button>${S.fields.length?`<button class="sm ghost" onclick="tdImport()">从当前文档字段导入</button>`:''}</div></div>
 <div style="display:flex;gap:8px;align-items:center;margin-top:14px">${t.builtin?`<button class="sm ghost" onclick="tdReset()">恢复默认</button>`:(t.isNew?'':`<button class="sm danger" onclick="tdDelete()">删除模板</button>`)}<span style="flex:1"></span><button class="ghost" onclick="closeModal()">取消</button><button onclick="tdSave()">保存</button></div>`;$('modal').classList.add('on')}
+/* ===== 从文字生成模板字段：编号行=字段；「名：说明」拆成字段名与提示；「注意：」等行进说明；第一行无编号则当模板名 ===== */
+function tdParseText(raw){
+  const text=String(raw||'').replace(/\r/g,'').replace(/ /g,' ').replace(/[\t ]+/g,' ');
+  const CN='[一二三四五六七八九十]{1,3}',AR='\\d{1,2}',CIR='[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳]',BUL='[•·●◦▪■◆✓√]';
+  const types=[
+    {re:new RegExp('^'+CN+'\\s*[、.．]'),mid:new RegExp('\\s+(?='+CN+'\\s*[、.．])','g')},
+    {re:new RegExp('^[（(]?'+AR+'[)）]'),mid:new RegExp('\\s+(?=[（(]?'+AR+'[)）])','g')},
+    {re:new RegExp('^'+AR+'\\s*[、.．]'),mid:new RegExp('\\s+(?='+AR+'\\s*[、.．])','g')},
+    {re:new RegExp('^'+CIR),mid:new RegExp('\\s+(?='+CIR+')','g')},
+    {re:new RegExp('^'+BUL+'\\s*'),mid:new RegExp('\\s+(?='+BUL+')','g'),strip:true},
+    {re:/^[-—–*]\s+/,mid:/\s+(?=[-—–*]\s)/g,strip:true}];
+  const lines0=text.split('\n').map(s=>s.trim()).filter(Boolean);
+  /* 编号既可能在行首，也可能挤在同一行里（微信里常见），按整段出现次数选编号样式 */
+  const cnt=t=>{const re=new RegExp('(?:^|\\s)'+t.re.source.replace(/^\^/,''),'gm');return(text.match(re)||[]).length};
+  const best=types.map(t=>({t,n:cnt(t)})).sort((a,b)=>b.n-a.n)[0];
+  const T=best&&best.n>=2?best.t:(best&&best.n===1&&lines0.length<=2?best.t:null);
+  const NOTE_MID=/\s+(?=(?:注意|备注|说明|要求|提示|PS|Ps|ps)\s*[:：])/g;
+  let lines=lines0.flatMap(l=>(T?l.replace(T.mid,'\n'):l).replace(NOTE_MID,'\n').split('\n').map(s=>s.trim()).filter(Boolean));
+  /* 没有编号、只有一行：按空格或顿号/逗号拆成多个字段名，如「姓名 电话 邮箱」 */
+  if(!T&&lines.length===1&&!/[:：]/.test(lines[0])){const parts=lines[0].split(/\s+|[、，,;；/｜|]/).map(s=>s.trim()).filter(Boolean);if(parts.length>=2)lines=parts}
+  const NOTE_RE=/^(注意|备注|说明|要求|提示|注|PS|Ps|ps)\s*[:：、]\s*/;
+  const TITLE_RE=/(信息|资料|模板|要求|表|格式|清单|需求|内容)$/;
+  const out={name:'',note:[],fields:[]};
+  const splitItem=l=>{
+    if(T&&T.strip)l=l.replace(T.re,'');
+    const m=l.match(/^(.+?)\s*[:：]\s*(.*)$/);if(m)return{l:m[1].trim(),h:m[2].trim()};
+    const p=l.match(/^(.*?)([（(])([^（）()]*)([）)])(.*)$/);
+    if(p){const before=p[1].trim(),inner=p[3].trim(),after=p[5].trim();
+      if(!inner)return{l:before,h:(p[2]+p[4]+after).trim()};
+      if(after)return{l:(before+p[2]+inner+p[4]).trim(),h:after}}
+    return{l:l.trim(),h:''}};
+  let started=false;
+  for(const l of lines){
+    const isItem=T?T.re.test(l):true;
+    if(NOTE_RE.test(l)&&!(T&&T.re.test(l))){out.note.push(l.replace(NOTE_RE,''));continue}
+    if(!T&&!started&&!out.name&&lines.length>1&&TITLE_RE.test(l)&&!/[:：]/.test(l)&&l.length<=24){out.name=l;continue}
+    if(isItem){out.fields.push(splitItem(l));started=true;continue}
+    if(!started){if(!out.name&&l.length<=30)out.name=l;else out.note.push(l);continue}
+    const last=out.fields[out.fields.length-1];last.h=(last.h?last.h+' ':'')+l}
+  let name=out.name.replace(/[:：]$/,'').trim();
+  const short=name.replace(/(候选人)?(推荐)?(所需|需要|需求|相关)?(信息|资料|模板|要求|格式|清单|内容|表)$/,'').trim();
+  if(short.length>=2)name=short;
+  return{name,note:out.note.join('；'),fields:out.fields.filter(f=>f.l)}}
+function tdTogglePaste(){TD.showPaste=!TD.showPaste;const ta=$('tdRaw');if(ta)TD.raw=ta.value;renderTplEditor()}
+function tdRecognize(auto){
+  const ta=$('tdRaw');const raw=ta?ta.value:(TD.raw||'');TD.raw=raw;
+  const blank=TD.fields.every(x=>!x.l.trim()&&!x.h.trim());
+  if(auto&&!blank)return;
+  if(!raw.trim()){toast('先把模板文字粘贴进来，或上传文件');return}
+  const r=tdParseText(raw);
+  if(!r.fields.length){toast('没识别出字段，请检查是否每项一行');return}
+  if(!TD.name.trim()&&r.name)TD.name=r.name;
+  if(!TD.note.trim()&&r.note)TD.note=r.note;
+  let added=0;
+  if(blank)TD.fields=r.fields,added=r.fields.length;else r.fields.forEach(f=>{if(!TD.fields.some(x=>x.l===f.l)){TD.fields.push(f);added++}});
+  renderTplEditor();
+  toast(blank?`识别出 ${r.fields.length} 个字段，核对后点「保存」`:`新增 ${added} 个字段（已有的跳过）`)}
+async function tdFromFile(f){
+  if(!f)return;let text='';
+  try{if(/\.(txt|md|csv)$/i.test(f.name))text=await f.text();
+    else if(/\.docx$/i.test(f.name)){await ensureMammoth();text=(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
+    else if(/\.pdf$/i.test(f.name)){toast('正在读取 PDF…');text=(await pdfToHtml(await f.arrayBuffer(),()=>{})).text}
+    else{toast('支持 .txt / .docx / .pdf；旧版 .doc 请先另存为 .docx');return}}
+  catch(e){toast('读取失败：'+(e.message||e));return}
+  TD.raw=text;TD.showPaste=true;renderTplEditor();tdRecognize()}
 function tdAdd(){TD.fields.push({l:'',h:''});renderTplEditor();const r=$('tdRows').lastElementChild;r&&r.querySelector('input.l').focus()}
 function tdDel(i){TD.fields.splice(i,1);renderTplEditor()}
 function tdMove(i,d){const j=i+d;if(j<0||j>=TD.fields.length)return;[TD.fields[i],TD.fields[j]]=[TD.fields[j],TD.fields[i]];renderTplEditor()}

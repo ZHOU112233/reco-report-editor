@@ -23,6 +23,7 @@
 - `const SYN={...}`：字段同义词表，`lookup(label)` 用它把模板字段名映射到简历里抽取的值。
 - `let S=load()||…`、`save()`：全部状态存浏览器 localStorage，键名 `reco_editor_v4`。改了状态结构要升键名并在 `load()` 里做迁移。
 - `initTpls / allTpls / editTpl / newTpl / tdSave`：模板可编辑、可新建，存在 `S.tpls`。
+- `tdParseText / tdRecognize / tdFromFile`：新建模板时把客户发来的要求原文（粘贴或上传 .txt/.docx/.pdf）拆成字段：编号行=字段，「名：说明」拆为字段名与提示，「注意：」行进说明，首行无编号当模板名。改解析规则只改 `tdParseText`。
 - `applyTpl / renderTplList / toggleTplField`：套模板、逐字段勾选。
 - `snap / pushUndo / undo / redo`：撤销栈（JSON 快照）。
 - `fmt / bubble / brush / unifySize / insertBreak`：富文本工具栏、浮动工具条、格式刷、统一字号、分页符。
