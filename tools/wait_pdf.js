@@ -1,0 +1,1 @@
+(window.__PDF&&(window.__k||(window.__k=1,handleFile(new File([Uint8Array.from(atob(window.__PDF),c=>c.charCodeAt(0))],window.__PDFNAME,{type:'application/pdf'})),0)),!!(window.S&&S.resume&&document.querySelector('#resumeDoc').textContent.length>100))
