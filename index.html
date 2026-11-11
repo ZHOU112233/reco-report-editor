@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>推荐报告编辑器 · Demo</title>
+<style>
+:root{--ink:#1b2232;--muted:#667085;--line:#e4e7ee;--bg:#eef0f5;--p:#4f46e5;--p2:#eef0ff;--ok:#0f9d75;--ok2:#e6f7f1;--warn:#b45309;--warn2:#fff4dc;--danger:#dc2626}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Hiragino Sans GB","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;height:100vh;display:grid;grid-template-rows:54px 1fr}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 13px;border-radius:8px;white-space:nowrap}
+button:hover{background:#fafbfd;border-color:#c7cbd6}
+button.primary{background:var(--p);color:#fff;border-color:var(--p)}button.primary:hover{background:#4338ca}
+button.ghost{border-color:transparent;background:transparent;color:var(--p)}
+button.sm{padding:4px 9px;font-size:12.5px}
+button.danger{color:var(--danger);border-color:#f3c3c3}
+textarea,input,select{font:inherit;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;width:100%}
+textarea:focus,input:focus,select:focus{outline:2px solid #c7d2fe;border-color:var(--p)}
+header{display:flex;align-items:center;gap:10px;padding:0 16px;background:#fff;border-bottom:1px solid var(--line)}
+header .logo{font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:8px;margin-right:6px}
+header .logo i{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#4f46e5,#06b6d4);display:inline-block}
+.badge{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--warn2);color:var(--warn)}
+header .sp{flex:1}
+.hint{font-size:12px;color:var(--muted)}
+main{display:grid;grid-template-columns:360px 1fr;min-height:0}
+main.collapsed{grid-template-columns:0 1fr}
+.side{background:#fff;border-right:1px solid var(--line);overflow:auto;padding:14px}
+main.collapsed .side{display:none}
+h3{font-size:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+h3 small{font-weight:400;color:var(--muted);font-size:12px}
+.blk{margin-bottom:16px}
+.drop{border:2px dashed #c9cfdd;border-radius:10px;padding:12px;text-align:center;color:var(--muted);background:#fafbfe;cursor:pointer;font-size:13px}
+.drop.hover{border-color:var(--p);background:var(--p2)}
+.drop b{color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;background:#eef1f6;color:var(--muted)}
+.pill.ok{background:var(--ok2);color:var(--ok)}.pill.warn{background:var(--warn2);color:var(--warn)}.pill.p{background:var(--p2);color:var(--p)}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:6px 10px;font-size:13px;align-items:center}
+.kv label{color:var(--muted);font-size:12.5px}
+.kv input{padding:5px 8px;font-size:13px}
+/* canvas */
+.canvas{overflow:auto;padding:18px 24px 60px;position:relative}
+.toolbar{position:sticky;top:0;z-index:5;display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;margin:0 auto 14px;max-width:820px;box-shadow:0 2px 8px rgba(20,30,60,.06)}
+.toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+.toolbar button{padding:4px 9px;font-size:13px;border-color:transparent}
+.toolbar button:hover{background:var(--p2);border-color:transparent}
+.toolbar .sw{width:22px;height:22px;border-radius:5px;border:1px solid #ddd;cursor:pointer}
+.toolbar select{width:auto;padding:3px 6px;font-size:12.5px}
+.paper{background:#fff;width:820px;margin:0 auto;padding:46px 56px;box-shadow:0 4px 24px rgba(20,30,60,.08);min-height:1000px;position:relative;font-size:14px;line-height:1.85;color:#111}
+.paper [contenteditable]:focus{outline:none;background:#fbfbff}
+.paper .doc-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:12px}
+.paper .sec-h{font-size:15px;font-weight:700;margin:14px 0 6px;padding-left:8px;border-left:3px solid var(--p);display:flex;align-items:center;justify-content:space-between}
+.paper .sec-h .ctl{font-size:12px;font-weight:400;color:var(--muted);display:none;gap:6px}
+.paper:hover .sec-h .ctl{display:flex}
+.frow{display:grid;grid-template-columns:18px minmax(90px,max-content) 1fr 22px;gap:0 8px;align-items:start;padding:1px 4px;margin:0 -4px;border-radius:6px;position:relative}
+.frow:hover{background:#f7f8ff}
+.frow .h{color:#c5c9d6;cursor:grab;font-size:14px;line-height:1.85;opacity:0}
+.frow:hover .h{opacity:1}
+.frow .lab{font-weight:600;white-space:nowrap;outline:none;border-bottom:1px dashed transparent}
+.frow .lab:hover,.frow .lab:focus{border-bottom-color:#c7cbd6}
+.frow .lab::after{content:'：'}
+.frow .v{outline:none;min-height:1.85em;white-space:pre-wrap}
+.frow .v:empty::before{content:attr(data-ph);background:var(--warn2);color:var(--warn);border:1px dashed #f0c27a;border-radius:4px;padding:0 6px;font-size:12.5px;font-weight:500;white-space:normal}
+.tplrow{border:1px solid var(--line);border-radius:9px;padding:6px 9px;margin-bottom:6px}.tplrow.cur{border-color:var(--p);background:#fbfbff}
+.tplhead{display:flex;align-items:center;gap:6px}.tplhead b{cursor:pointer;color:var(--p)}.tplhead b:hover{text-decoration:underline}.tplhead .sp{flex:1}
+.tplfields{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:12.5px}.tplfields label{display:flex;gap:5px;align-items:flex-start;cursor:pointer}.tplfields input{width:auto;margin-top:3px}
+.frow .x{opacity:0;color:#aab;cursor:pointer;font-size:14px;line-height:1.85;text-align:center}
+.frow:hover .x{opacity:1}
+.frow .x:hover{color:var(--danger)}
+.frow.drag{opacity:.4}
+.addrow{display:flex;gap:8px;align-items:center;margin:8px 0 4px;padding-left:26px}
+.addrow input{width:200px;padding:5px 9px;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;padding-left:26px;margin-bottom:6px}
+.chip{font-size:12px;padding:2px 9px;border-radius:999px;background:#eef1f6;cursor:pointer;color:#445}
+.chip:hover{background:var(--p2);color:var(--p)}
+.chip.auto{background:var(--ok2);color:var(--ok)}
+.divider{display:flex;align-items:center;gap:10px;color:#99a;font-size:12px;margin:22px 0 10px}
+.divider::before,.divider::after{content:'';flex:1;border-top:1px dashed #ccd}
+.divider .ctl{display:flex;gap:6px}
+.resume{outline:none;min-height:120px}
+.resume p{margin:0;white-space:pre-wrap;min-height:1em}
+.resume img{max-width:100%}
+.resume table{border-collapse:collapse;margin:4px 0}.resume td,.resume th{border:1px solid #ccc;padding:2px 6px}
+.resume ul,.resume ol{padding-left:1.6em}
+.pastebox{min-height:150px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.5;margin-top:8px;outline:none;background:#fff}
+.pastebox:focus{outline:2px solid #c7d2fe;border-color:var(--p)}
+.pastebox:empty::before{content:attr(data-ph);color:#aab}
+.pastebox p{margin:0}.pastebox img{max-width:100%}
+.resume:empty::before{content:'把候选人原始简历粘贴到这里（支持从 Word 直接粘贴保留格式），或在左侧上传后自动带入';color:#aab}
+.pagebreak{border-top:2px dashed #cbd;margin:18px 0;text-align:center;font-size:11px;color:#aab;line-height:0}
+.pagebreak span{background:#fff;padding:0 8px;position:relative;top:0;cursor:pointer}
+.pagebreak:hover span{color:var(--danger)}
+.toolbar button:disabled{color:#b8bcc8;cursor:default;background:none}
+.toolbar button.on{background:var(--p);color:#fff}
+body.brushing #paper [contenteditable]{cursor:cell}
+.resume::after{content:"";display:block;clear:both}
+.resume img{max-width:100%}
+.wmlayer{position:absolute;inset:0;pointer-events:none;overflow:hidden;display:none;grid-template-columns:repeat(2,1fr);grid-auto-rows:220px;place-items:center}
+.paper.wm .wmlayer{display:grid}
+.wmlayer span{transform:rotate(-28deg);white-space:nowrap;font-weight:700;color:#777}
+.mark{background:#fff3b0}
+.bubble{position:fixed;z-index:30;display:none;align-items:center;gap:6px;background:#1b2232;border-radius:9px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.25);color:#fff;font-size:14px;transform:translate(-50%,-100%);margin-top:-8px}
+.bubble.on{display:flex}
+.bubble .sw{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.4);cursor:pointer}
+.bubble b,.bubble u,.bubble s,.bubble i{cursor:pointer;padding:0 5px;border-radius:4px;line-height:20px}
+.bubble b:hover,.bubble u:hover,.bubble s:hover,.bubble i:hover{background:rgba(255,255,255,.18)}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-5px;width:10px;height:10px;background:#1b2232;transform:translateX(-50%) rotate(45deg)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;inset:0;background:rgba(20,30,60,.45);display:none;align-items:center;justify-content:center;z-index:40}
+.modal.on{display:flex}
+.box{background:#fff;border-radius:14px;width:min(760px,94vw);max-height:88vh;overflow:auto;padding:20px}
+.box h3{font-size:16px;margin-bottom:10px}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
+table.t th{color:var(--muted);font-size:12px}
+.tplgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tplcard{border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.tplcard:hover{border-color:var(--p);background:#fbfbff}
+.tplcard b{display:block;margin-bottom:3px}
+.del{color:var(--danger);font-size:12px;margin-left:4px;text-decoration:none}.del:hover{text-decoration:underline}
+.tplhead{flex-wrap:wrap}.tplhead button.sm{padding:3px 6px}
+.tpled .row{display:flex;gap:6px;align-items:center;margin-bottom:5px}.tpled .row>label{width:36px;color:var(--muted);font-size:12.5px;text-align:right}.tpled input.l{width:230px}.tpled input.h{flex:1}.tpled .head{font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:2px}
+.tplcard span{font-size:12px;color:var(--muted)}
+@media print{body>*{display:none!important}#printArea{display:block!important}#printArea .paper{box-shadow:none;width:auto;min-height:0;margin:0}#printArea .frow .h,#printArea .frow .x,#printArea .ctl,#printArea .addrow,#printArea .chips{display:none!important}#printArea .frow{grid-template-columns:minmax(90px,max-content) 1fr;gap:0 8px;padding:1px 0;margin:0}#printArea .frow .v{min-height:0}#printArea .pagebreak{page-break-after:always;border:none;height:0}#printArea .pagebreak span{display:none}#printArea .frow .v:empty::before{content:'【待补充】';background:none;border:none;color:#b45309}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><i></i>推荐报告编辑器 <span class="badge">Demo</span></div>
+  <button class="sm" onclick="toggleSide()" id="sideBtn">收起资料栏</button>
+  <span class="hint">原始简历按原排版带入（字号、颜色、分栏保留），和推荐语在同一份文档里编辑；字段随客户要求增删</span>
+  <div class="sp"></div>
+  <button onclick="resetDoc()" title="清空当前文档，回到刚打开时的状态（可撤销）">新建报告</button>
+  <button onclick="openTpls()">字段模板</button>
+  <button onclick="openHist()">历史</button>
+  <button onclick="copyText()">复制纯文本</button>
+  <button onclick="exportWord()">导出 Word</button>
+  <button class="primary" onclick="exportPdf()">导出 PDF</button>
+</header>
+<main id="main">
+  <aside class="side">
+    <div class="blk"><h3>资料来源 <small>解析后直接进入右侧文档</small></h3>
+      <div class="drop" id="drop" onclick="document.getElementById('file').click()"><b>拖入原始简历</b>（PDF / Word / TXT）<br><span class="hint">PDF 保留原排版（字号、颜色、分栏）；Word(.docx) 保留标题 / 加粗 / 列表 / 表格。也可以直接把简历粘贴到右侧简历区</span></div>
+      <input type="file" id="file" hidden accept=".pdf,.doc,.docx,.txt,.md">
+      <div id="filetag" class="hint" style="margin-top:6px"></div>
+    </div>
+    <div class="blk"><h3>推荐模板 <small>点名称整套载入，展开可逐个勾选</small></h3>
+      <div id="tplList"></div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="sm" onclick="newTpl(false)">新建模板</button><button class="sm ghost" onclick="newTpl(true)">把当前字段存为模板</button></div>
+    </div>
+    <div class="blk"><h3>文件信息</h3>
+      <div class="kv"><label>推荐岗位</label><input id="position" placeholder="如：电气自动化技术员"><label>客户</label><input id="client" placeholder="如：歌尔"><label>输出文件名</label><div id="fname" class="hint" style="font-family:ui-monospace,Menlo,monospace;color:var(--ink)">—</div></div>
+      <label style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="wmOn" style="width:auto" onchange="applyWm()"> 导出时加水印</label>
+      <input id="wmText" value="仅供客户内部评估使用" style="margin-top:6px" oninput="applyWm()">
+    </div>
+  </aside>
+
+  <div class="canvas">
+    <div class="toolbar" onmousedown="if(event.target.tagName!=='SELECT')event.preventDefault()">
+      <button id="undoBtn" onclick="undo()" disabled>↶ 撤销</button><button id="redoBtn" onclick="redo()" disabled title="重做">↷</button><span class="hint" id="undoHint"></span>
+      <span class="sep"></span>
+      <button onclick="fmt('bold')" title="加粗"><b>B</b></button>
+      <button onclick="fmt('italic')" title="斜体"><i>I</i></button>
+      <button onclick="fmt('underline')" title="画线（下划线）"><u>U</u></button>
+      <button onclick="fmt('strikeThrough')" title="删除线"><s>S</s></button>
+      <span class="sep"></span>
+      <span class="hint">字色</span>
+      <span class="sw" style="background:#d61f1f" onclick="fmt('foreColor','#d61f1f')" title="标红"></span>
+      <span class="sw" style="background:#1d4ed8" onclick="fmt('foreColor','#1d4ed8')"></span>
+      <span class="sw" style="background:#111" onclick="fmt('foreColor','#111111')"></span>
+      <span class="hint" style="margin-left:6px">底色</span>
+      <span class="sw" style="background:#fff3b0" onclick="fmt('hiliteColor','#fff3b0')" title="黄底"></span>
+      <span class="sw" style="background:#dcfce7" onclick="fmt('hiliteColor','#dcfce7')"></span>
+      <span class="sw" style="background:#fff;border-style:dashed" onclick="fmt('hiliteColor','transparent')" title="去底色"></span>
+      <span class="sep"></span>
+      <select onchange="fmt('fontSize',this.value);this.value=''"><option value="">字号</option><option value="2">小</option><option value="3">正文</option><option value="4">大</option><option value="5">标题</option></select>
+      <button onclick="fmt('removeFormat')">清除格式</button>
+      <button id="brushBtn" onclick="brushClick(event)" title="格式刷：先选中带格式的文字点一下，再去刷别的文字；双击锁定连续刷，Esc 退出">🖌 格式刷</button>
+      <button onclick="unifySize()" title="把简历里细碎的字号差异统一成正文字号，标题保留">统一字号</button>
+      <span class="sep"></span>
+      <button onclick="insertBreak()">插入分页</button>
+      <button onclick="addSection()">加一段标题</button>
+      <span class="sep"></span>
+      <span class="hint" id="saveState">未保存</span>
+      <button class="sm primary" onclick="saveHist()">保存</button>
+    </div>
+
+    <div class="paper" id="paper">
+      <div class="wmlayer" id="wmlayer"></div>
+      <div class="doc-title" contenteditable="true" id="docTitle" spellcheck="false">推荐岗位-候选人姓名</div>
+      <div class="sec-h"><span contenteditable="true" spellcheck="false">推荐语</span><span class="ctl"><span class="hint">拖动 ⋮⋮ 排序 · 点标签可改名 · 点 ✕ 删除</span></span></div>
+      <div id="fields"></div>
+      <div class="chips" id="suggest"></div>
+      <div class="addrow"><input id="newField" placeholder="输入要加的字段名，回车添加"><button class="sm" onclick="addFieldFromInput()">添加字段</button><button class="sm ghost" onclick="openTpls()">按客户模板加载</button></div>
+
+      <div class="pagebreak" id="preBreak" style="display:none" title="点击删除这个分页符" onclick="removeBreak(this)"><span>分页 ✕</span></div>
+      <div class="divider" id="resDivider"><span>以下为候选人原始简历 · 选中任意文字即可标红 / 画线 / 高亮</span><span class="ctl"><button class="sm" onclick="togglePageImg()" id="imgToggle">按原页面图片</button><button class="sm" onclick="toggleResume()" id="resToggle">不附简历</button></span></div>
+      <div class="resume" contenteditable="true" id="resumeDoc" spellcheck="false"></div>
+    </div>
+  </div>
+</main>
+
+<div class="bubble" id="bubble" onmousedown="event.preventDefault()"><span class="sw" style="background:#d61f1f" onclick="fmt('foreColor','#d61f1f')" title="标红"></span><span class="sw" style="background:#1d4ed8" onclick="fmt('foreColor','#1d4ed8')" title="标蓝"></span><span class="sw" style="background:#fff3b0" onclick="fmt('hiliteColor','#fff3b0')" title="黄底高亮"></span><b onclick="fmt('bold')" title="加粗">B</b><u onclick="fmt('underline')" title="画线">U</u><s onclick="fmt('strikeThrough')" title="删除线">S</s><i onclick="fmt('removeFormat');fmt('hiliteColor','transparent')" title="清除格式" style="font-style:normal;font-size:12px">清除</i></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div id="printArea" style="display:none"></div>
+<style id="pageCss"></style>
+
+<script>
+const LS='reco_editor_v4';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000)}
+
+/* ===== 字段同义词（只是帮助自动填，不限制字段） ===== */
+const SYN={
+ '姓名':['姓名','人选姓名','候选人'],'性别':['性别'],'年龄':['年龄'],'出生年份':['出生年份','出生'],'学校':['学校','学校名称','毕业院校','院校'],'在校时间':['在校时间','就读时间'],'学历':['学历','最高学历'],'是否统招本科':['统招','统招本科','是否统招本科','是否统招'],'英语':['英语','英语水平','外语','外语能力','英语能力','外语水平'],'学历&英语':['学历&英语','学历和英语'],
+ '目前公司':['目前公司','现公司','当前公司','公司'],'职位':['职位','岗位','职务','任职'],'职级':['职级','级别'],'是否带团队':['是否带团队','带团队','团队规模'],'晋升情况':['晋升情况','晋升'],'在职情况':['在职情况','是否在职','目前是否在职','在职状态','求职状态','目前状态'],'是否要求带团队':['是否要求带团队','要求带团队'],
+ '目前base地':['目前base地','base地','base','所在城市'],'预期base地':['预期base地','预期base','期望base','期望城市','意向城市','期望工作地'],'目前所在地':['目前所在地','所在地','现居地','现居','现居住地','居住地','住址','所在城市'],'户籍地':['户籍地','户籍','籍贯','户口所在地','户口'],'婚育情况':['婚育情况','婚育','婚姻状况','婚姻'],
+ '面试进度':['面试进度','其他公司面试流程进度','面试情况','offer情况','目前手上面试或者offer情况','手上面试'],'近2年绩效':['近2年绩效','近两年绩效','绩效','近2年绩效情况'],'到岗时间':['到岗时间','预计到岗时间','预计到岗','到岗日期'],'看机会原因':['看机会原因','求职原因','求职动机','离职原因','动机'],'在职情况&求职原因':['在职情况&求职原因'],'工作年限':['工作年限','年限','工作年限（排除待业时间）'],
+ '目前薪资':['目前薪资','现薪','当前薪资','目前薪资及薪资结构','目前薪酬','目前年薪','现薪资'],'薪资结构':['薪资结构'],'期望薪资':['期望薪资','预期薪资','期望薪酬','期望年薪'],'手机':['手机','电话','联系电话','手机号','联系方式'],'邮箱':['邮箱','email','邮件'],'方便面试时间':['方便面试时间','面试时间','线上方便面试时间','机测时间','可以机测时间'],
+ '优势':['优势','亮点','推荐理由','个人优势','自我评价','核心优势'],'劣势':['劣势','不足','顾虑','风险点'],'教育背景':['教育背景','教育经历','学习经历'],'核心工作经历':['核心工作经历','工作经历','主要经历'],'基本情况':['基本情况'],'其他':['其他','备注']};
+/* 四家客户的字段模板（可增删，只是起点） */
+const TPLS=[
+ {id:'xhs',name:'小红书',note:'11 项问答式',fields:['出生年份','学校名称、时间、是否为统招本科','目前公司、职级、是否带团队','晋升情况','目前是否在职','是否要求带团队','目前base地+预期base地','其他公司面试流程进度','近2年绩效情况','预计到岗时间','看机会原因']},
+ {id:'shenlong',name:'神龙岗',note:'简历 PDF，文件名「岗位+姓名」',fields:['姓名','工作年限（排除待业时间）','学历&英语','目前所在地','户籍地','在职情况&求职原因','目前薪资','期望薪资','婚姻状况','目前手上面试或者offer情况','其他']},
+ {id:'goer',name:'歌尔岗',note:'先判重；首行 推荐职位-姓名-所在地',fields:['基本情况','求职动机','推荐理由','目前薪资及薪资结构','期望薪资','手机','邮箱','线上方便面试时间']},
+ {id:'jinri',name:'今日宜休',note:'六段综合评估',fields:['优势','劣势','核心工作经历','突出业绩','教育背景','个人情况','目前薪资','期望薪资','求职动机']},
+ {id:'tencent',name:'腾讯云',note:'标题「推荐岗位-姓名」，离职回流须附在职 RTX；推荐理由按 1)–4) 书写；最后补风险点与注意事项',fields:[
+  {l:'1) 目前公司职级和绩效情况',h:'专业职级 + 管理职级、晋升时间、管理幅度、绩效。如：阿里，P8，带 10 人团队，最近三次绩效 3.75、3.75、3.5'},
+  {l:'2) 工作核心内容',h:'1–2 句话概括工作内容，简练，不超过 3 句'},
+  {l:'3) 地点',h:'目前工作地点 + 期望工作地点。如：目前 base 杭州，未来希望深圳'},
+  {l:'4) 薪酬信息',h:'目前薪酬 XXX，期望薪酬 XXX，对薪酬的态度（open 来看 / 低于 XXX 不谈）'},
+  {l:'其他信息补充',h:'风险点、注意事项。如：有竞业协议请注意信息保护；9 月后才可面试；业务调整领了裁员指标，目前离职状态'},
+  {l:'是否离职回流',h:'离职回流须附上在职 RTX'}]},
+ {id:'meituan',name:'美团',note:'八项信息按序填写；推荐理由不超过 5 条、每条尽量不超过 30 字；提交前核实最后一段经历时间，如有空窗期须据实说明',fields:[
+  {l:'一、在职情况',h:'在职 / 已离职（已离职请写离职时间）'},
+  {l:'二、离职原因（在职的话看机会原因）',h:'在职写看机会原因，离职写离职原因'},
+  {l:'三、离职需要大概时间',h:'如：2 周 / 1 个月 / 随时'},
+  {l:'四、薪资结构（需提供具体数字）',h:'基本工资（）元*（）个月+绩效（）+补贴（）+年终奖（）=合计（）'},
+  {l:'五、期望工资',h:'（）元/年'},
+  {l:'六、推荐理由（不超过5条，每条尽量不超过30个字）',h:'1、… 2、… 3、… 4、… 5、…'},
+  {l:'七、现居城市（精准到市）',h:'如：上海市 / 杭州市'},
+  {l:'八、最后一段经历时间核实',h:'核实最后一段经历起止时间是否准确；如有空窗期需据实说明'}]}
+];
+const tf=f=>typeof f==='string'?{label:f,hint:''}:{label:f.l,hint:f.h||''};
+let S=load()||{fields:[],resumeHtml:'',srcHtml:'',title:'',resume:'',notes:'',position:'',client:'',file:'',withResume:true,wm:false,wmText:'仅供客户内部评估使用',userTpls:[],hist:[]};
+const BLANK=()=>({fields:[],resumeHtml:'',srcHtml:'',title:'',titleTouched:false,resume:'',notes:'',position:'',client:'',file:'',page:null,tplName:'',breakBefore:false,withResume:true,wm:false,wmText:'仅供客户内部评估使用',hist:[]});
+function load(){try{const s=JSON.parse(localStorage.getItem(LS));if(s)return s;/* 旧版本只迁移模板，文档从空白开始 */const v3=JSON.parse(localStorage.getItem('reco_editor_v3'));if(v3&&Array.isArray(v3.tpls))return Object.assign(BLANK(),{tpls:v3.tpls,hist:v3.hist||[]});const v2=JSON.parse(localStorage.getItem('reco_editor_v2'));if(v2&&(v2.userTpls||[]).length)return Object.assign(BLANK(),{userTpls:v2.userTpls});return null}catch(e){return null}}
+/* 模板全部可编辑：内置模板首次运行拷贝进 S.tpls（带 builtin 标记，可恢复默认），自定义模板放同一数组 */
+function initTpls(){const cp=t=>({...JSON.parse(JSON.stringify(t)),builtin:true});if(!Array.isArray(S.tpls)){S.tpls=TPLS.map(cp);(S.userTpls||[]).forEach(t=>S.tpls.push(t));delete S.userTpls}TPLS.forEach((t,i)=>{if(!S.tpls.some(x=>x.id===t.id))S.tpls.splice(Math.min(i,S.tpls.length),0,cp(t))});save()}
+const allTpls=()=>S.tpls||[];
+function save(){try{localStorage.setItem(LS,JSON.stringify(S));$('saveState').textContent='草稿已自动保存 '+new Date().toLocaleTimeString()}catch(e){}}
+
+/* ===== 抽取（简历正则 + 顾问补充 key:value） ===== */
+let D={};
+const norm=k=>String(k||'').replace(/\s+/g,'').replace(/[（(][^）)]*[）)]/g,'');
+/* 常见简历字段名（用于「姓名 张三  电话 138…」这种没有冒号、一行多项的写法） */
+const KEYS=['姓名','性别','年龄','出生年月','出生日期','出生年份','出生','电话','手机号','手机','联系方式','联系电话','邮箱','邮件','E-mail','Email','email','微信','民族','身高','政治面貌','籍贯','户籍地','户籍','户口所在地','户口','现居地','现居住地','现居','居住地','目前所在地','所在地','所在城市','住址','地址','婚姻状况','婚育情况','婚姻','婚育','最高学历','学历','毕业院校','毕业学校','学校','专业','工作年限','工作经验','期望薪资','期望薪酬','期望年薪','目前薪资','目前薪酬','现薪','当前薪资','目前年薪','期望城市','意向城市','期望工作地','求职意向','期望职位','意向职位','到岗时间','英语水平','英语','外语','在职情况','求职状态','目前状态','离职原因','离职时间','现居城市','QQ'];
+const KEY_RE=new RegExp('(?:^|[\\s|｜丨,，;；、/])('+KEYS.slice().sort((a,b)=>b.length-a.length).map(k=>k.replace(/[-]/g,'\\-')).join('|')+')\\s*[:：]?\\s*','g');
+const KEY_CUT_RE=new RegExp('\\s+('+KEYS.slice().sort((a,b)=>b.length-a.length).map(k=>k.replace(/[-]/g,'\\-')).join('|')+')\\s*[:：]','g');
+const DTP='((?:19|20)\\d{2})(?:\\s*[.年/\\-]\\s*(\\d{1,2})(?:\\s*[.日/\\-]\\s*\\d{1,2})?\\s*月?)?';
+const RANGE_RE=new RegExp(DTP+'\\s*[-–—~至到]+\\s*(至今|现在|今|'+DTP+')');
+const HEAD_RE=/^(教育经历|教育背景|学习经历|工作经历|工作经验|职业经历|工作履历|项目经历|项目经验|个人优势|自我评价|核心优势|专业技能|技能简介|技能特长|技能|证书|培训经历|培训|基本信息|个人信息|求职意向|荣誉|兴趣爱好|其他|综合评估|项目成就|技能证书)/;
+const dt=(y,mo)=>mo?`${y}.${String(mo).padStart(2,'0')}`:String(y);
+function extract(){let r=(S.resume||'').replace(/\r/g,'');if(typeof fixRad==='function')r=fixRad(r);const n=S.notes||'';const d={};const m=re=>{const x=r.match(re);return x?x[1].trim():''};
+  /* 「姓 名：」「邮 箱：」这种为了对齐在字里加空格的键名，先把冒号前的空格去掉 */
+  const unspace=l=>l.replace(/(^|\s)([一-龥])((?: [一-龥]){1,3})(?=\s*[：:])/g,(m,a,b,c)=>a+b+c.replace(/ /g,''));
+  const lines=r.split('\n').map(l=>unspace(l.replace(/\t/g,'  ').replace(/ {3,}/g,'  ').trim())).filter(Boolean);
+  /* ---- 1. 键值对：冒号式、空格式、竖线分隔，一行可多项 ---- */
+  const setKV=(k0,v,strong)=>{const k=norm(k0);v=String(v).trim().replace(/^[:：]\s*/,'').replace(/[|｜丨,，;；、\s]+$/,'');if(!k||!v||v.length>200||/^https?:/i.test(v))return;if(strong||!d[k])d[k]=v;if(k!==k0&&(strong||!d[k0]))d[k0]=v;
+    let best=null,bl=0,exact=false;for(const [f,syns] of Object.entries(SYN))for(const s of syns){const e=k===s;if((e||(s.length>=3&&k.includes(s)))&&(s.length>bl||(e&&!exact))){best=f;bl=s.length;exact=e}}if(best&&(strong||exact||!d[best]))d[best]=v};
+  const harvestLine=(line,strong)=>{const segs=line.replace(KEY_CUT_RE,'\n$1：').split(/\n|\s*[|｜丨]\s*|\s{2,}/);for(const seg of segs){const mm=seg.match(/^\s*([^：:]{1,25})[：:]\s*(.+)$/);if(mm){setKV(mm[1],mm[2],strong);continue}
+      /* 「姓名 吴生卓 电话 177…」：按已知字段名切 */
+      const hits=[...seg.matchAll(KEY_RE)];if(!hits.length)continue;for(let i=0;i<hits.length;i++){const h=hits[i];const vs=h.index+h[0].length;const ve=i+1<hits.length?hits[i+1].index:seg.length;const v=seg.slice(vs,ve).trim();if(v&&v.length<=40&&!KEYS.includes(v))setKV(h[1],v,strong)}}};
+  /* ---- 2. 正则兜底 ---- */
+  d['手机']=m(/(1[3-9]\d{9})/);d['邮箱']=m(/([\w.+-]+@[\w-]+\.[\w.]+)/);
+  const g=r.match(/(?:^|[\s|｜丨,，、/])(男|女)(?=$|[\s|｜丨,，、/岁])/m);if(g)d['性别']=g[1];
+  const ag=r.match(/(\d{2})\s*岁/);if(ag)d['年龄']=ag[1];
+  const ye=r.match(/(\d{1,2})\s*年(?:以上)?(?:相关)?(?:工作)?经验/);if(ye)d['工作年限']=ye[1]+' 年';
+  d['婚育情况']=m(/(已婚已育|已婚未育|未婚未育|未婚|已婚|离异)/);
+  const pos=m(/推荐(?:职位|岗位)[:：]\s*([^\s，,|]+)/);if(pos&&!S.position){S.position=pos;$('position').value=pos}
+  /* ---- 3. 按行扫描：章节、工作/教育条目、优势段落 ---- */
+  let section='',curJob=null;const jobs=[],edus=[],sec={};
+  for(const l of lines){const hm=l.match(HEAD_RE);if(hm&&l.length<=14){section=hm[1];curJob=null;continue}
+    let rg=l.match(RANGE_RE);
+    /* 括号里的时间段（如「（2021-至今）HRBP：…」）或长句里的纯年份区间，是描述不是条目 */
+    if(rg&&(/[（(]\s*$/.test(l.slice(0,rg.index))||(!rg[2]&&l.length>60)))rg=null;
+    if(rg){const start=dt(rg[1],rg[2]),end=/至今|现在|今/.test(rg[3])?'至今':dt(rg[4],rg[5]);let rest=l.replace(rg[0],' ').replace(/[（(]\s*\d+\s*年?\s*\d*\s*个?月?\s*[）)]/g,' ').replace(/\s+/g,' ').trim();
+      const sch=(rest.match(/([一-龥A-Za-z]+(?:大学|学院|学校|中学|技师学院))(?![一-龥]*(?:公司|集团))/)||[])[1]||'';const deg=(rest.match(/(本科|硕士|博士|专科|大专|中专|中技\/中专|中技|高中|MBA|研究生|学士)/)||[])[1]||'';
+      if(sch&&(deg||/教育|学习/.test(section))){const tag=(rest.match(/(统招|非统招|全日制|非全日制|第二学历|自考|成考|成人)/)||[])[1]||'';const major=rest.replace(sch,'').replace(deg,'').replace(tag,'').replace(/[（）()]|学历|专业$/g,' ').replace(/\s+/g,' ').trim();edus.push({start,end,sch,deg,tag,major});curJob=null;continue}
+      if(/教育|学习/.test(section))continue;
+      const coRe=/([一-龥A-Za-z0-9·&]+(?:公司|集团|厂|研究院|研究所|中心|银行|医院|事务所|工作室|Ltd|Inc|Co\.)(?:\s*[（(][^）)]*[）)])?)/;if(/项目/.test(section)&&!coRe.test(rest))continue;
+      let co=(rest.match(/([一-龥A-Za-z0-9·&]+(?:公司|集团|厂|研究院|研究所|中心|银行|医院|事务所|工作室|Ltd|Inc|Co\.)(?:\s*[（(][^）)]*[）)])?)/)||[])[1]||'';let title=co?rest.replace(co,' ').trim():'';
+      if(!co){const toks=rest.split(' ').filter(Boolean);if(toks.length>=2){co=toks[0];title=toks.slice(1).join(' ')}else if(toks.length===1&&/工作|职业|履历/.test(section)){co=toks[0]}}
+      if(!co)continue;title=title.replace(/^[,，、/]+|[,，、/]+$/g,'').trim();curJob={start,end,co,title,desc:''};jobs.push(curJob);continue}
+    if(/优势|评价|技能|特长/.test(section)){sec[section]=(sec[section]||'')+(sec[section]?'\n':'')+l;continue}
+    if(curJob&&!/教育|项目/.test(section)&&!/^职责业绩[:：]?$/.test(l)&&curJob.desc.length<800)curJob.desc+=(curJob.desc?' ':'')+l.replace(/^(核心职责|工作描述|主要职责|工作内容|职责描述)[:：]\s*/,'')}
+  /* 同一段经历出现两次（摘要+详情）时保留描述更长的那条 */
+  const cokey=c=>c.replace(/\s*[（(].*$/,'');const uj=[];for(const j of jobs){const ex=uj.find(x=>cokey(x.co)===cokey(j.co)&&x.start===j.start);if(ex){if(j.desc.length>ex.desc.length)ex.desc=j.desc;if(!ex.title)ex.title=j.title}else uj.push(j)}uj.sort((a,b)=>b.start.localeCompare(a.start));edus.sort((a,b)=>b.start.localeCompare(a.start));
+  if(uj[0]){const j=uj[0];d['目前公司']=j.co.replace(/\s*[（(][^）)]*[）)]$/,'');d['职位']=j.title.replace(/[（(].*$/,'').trim();const lv=j.title.match(/[（(]([^）)]+)[）)]/);d['职级']=lv?lv[1]:'';const tm=j.desc.match(/带\s*(\d+)\s*人/)||j.desc.match(/团队\s*(\d+)\s*人/)||j.desc.match(/(\d+)\s*人团队/);d['是否带团队']=tm?`带团队 ${tm[1]} 人`:(/带团队|主管.*团队|团队管理|管理团队|部门团队|团队分工|带领/.test(j.desc)?'带团队':'');const pr=j.desc.match(/(\d{4})\s*年?由?([一-龥]+)晋升为([一-龥]+)/);if(pr)d['晋升情况']=`${pr[1]} 年 ${pr[2]} → ${pr[3]}`;
+    d['目前公司、职级、是否带团队']=[d['目前公司'],d['职级']||'待补充',d['是否带团队']||'待补充'].join('、');
+    d['核心工作经历']=uj.slice(0,3).map(j=>`${j.start}–${j.end} ${j.co} ${j.title}${j.desc?'\n'+j.desc.slice(0,160):''}`).join('\n');if(j.desc)d['突出业绩']=j.desc.slice(0,200);
+    if(j.end==='至今')d['在职情况']='在职'}
+  if(uj.length&&!d['工作年限']){const f=uj[uj.length-1].start;const y=+f.slice(0,4),mo=+(f.slice(5,7)||6);const now=new Date();d['工作年限']=`约 ${Math.round(now.getFullYear()-y+(now.getMonth()+1-mo)/12)} 年`}
+  if(edus[0]){const e=edus[0];const t=`${e.start}–${e.end}`;d['学校']=e.sch;d['在校时间']=t;d['学历']=e.deg+(e.tag?`（${e.tag}）`:'');d['专业']=e.major;d['是否统招本科']=(e.tag==='统招'||e.tag==='全日制')?(e.deg==='本科'?`${e.tag}本科`:`${e.tag}${e.deg}（非本科）`):(e.tag||'');d['教育背景']=edus.slice(0,2).map(e=>`${e.sch} ${e.major} ${e.deg}${e.tag?`（${e.tag}）`:''}（${e.start}–${e.end}）`).join('\n');d['学校名称、时间、是否为统招本科']=[e.sch,t,d['是否统招本科']||'待补充'].join('、')}
+  const adv=sec['个人优势']||sec['自我评价']||sec['核心优势']||m(/【核心优势】\s*\n?([^\n]{20,})/);if(adv)d['个人优势']=adv;const sk=sec['专业技能']||sec['技能简介']||sec['技能特长']||sec['技能']||m(/技能[:：]\s*([^\n]+)/);if(sk)d['技能']=sk;
+  d['推荐理由']=adv||[uj[0]&&uj[0].desc?uj[0].desc.slice(0,160):'',sk?`技能：${sk.slice(0,80)}`:''].filter(Boolean).join('。');
+  /* ---- 4. 键值对收割：简历（精确同名可覆盖，模糊只补空）→ 顾问补充（覆盖） ---- */
+  lines.forEach(l=>harvestLine(l,false));n.split('\n').forEach(l=>harvestLine(l,true));
+  /* ---- 5. 归一与组合 ---- */
+  if(!d['姓名']){const f=lines[0]||'';if(/^[一-龥]{2,4}$/.test(f))d['姓名']=f;else{const mm=f.match(/^([一-龥]{2,4})\s/);if(mm&&!KEYS.includes(mm[1]))d['姓名']=mm[1]}}
+  if(d['姓名']&&(KEYS.includes(d['姓名'])||d['姓名'].length>4))delete d['姓名'];
+  const by=d['出生年月']||d['出生日期']||d['出生']||'';const bm=by.match(/((?:19|20)\d{2})/)||r.match(new RegExp(DTP+'\\s*出生'));if(bm)d['出生年份']=bm[1];
+  if(d['出生年份']&&!d['年龄'])d['年龄']=String(new Date().getFullYear()-+d['出生年份']);
+  if(/^\d+$/.test(d['工作年限']||''))d['工作年限']+=' 年';
+  if(d['电话']&&!d['手机'])d['手机']=d['电话'];if(d['期望城市']&&!d['预期base地'])d['预期base地']=d['期望城市'];if(d['现居']&&!d['目前所在地'])d['目前所在地']=d['现居'];if(d['住址']&&!d['目前所在地'])d['目前所在地']=d['住址'];
+  if(d['目前所在地'])d['目前base地']=d['目前所在地'];
+  if(d['学历']&&/全日制/.test(d['学历'])&&!d['是否统招本科'])d['是否统招本科']=d['学历'].match(/(非?全日制)/)[1]+d['学历'].replace(/[（(].*$/,'');
+  if(d['学历']||d['英语'])d['学历&英语']=d['学历&英语']||`${d['学历']||'待补充'}&${d['英语']||'待补充'}`;
+  if(d['目前薪资']&&!d['薪资结构']){const ss=d['目前薪资'].match(/(\d+\s*薪.*|.*股权.*)/);if(ss){d['薪资结构']=ss[1].trim();d['目前薪资']=d['目前薪资'].replace(ss[1],'').replace(/[，,、\s]+$/,'')}}
+  if(d['目前薪资'])d['目前薪资及薪资结构']=d['目前薪资及薪资结构']||(d['薪资结构']?`${d['目前薪资']}，${d['薪资结构']}`:d['目前薪资']);
+  if(d['在职情况&求职原因']&&!d['看机会原因']){const sp=d['在职情况&求职原因'].split(/[，,；;]/);if(sp.length>1){d['在职情况']=sp[0];d['看机会原因']=sp.slice(1).join('，')}}
+  if(d['在职情况']||d['看机会原因'])d['在职情况&求职原因']=d['在职情况&求职原因']||`${d['在职情况']||'待补充'}&${d['看机会原因']||'待补充'}`;
+  if(d['看机会原因'])d['求职动机']=d['求职动机']||d['看机会原因'];if(d['婚育情况'])d['婚姻状况']=d['婚姻状况']||d['婚育情况'];if(d['面试进度']){d['其他公司面试流程进度']=d['其他公司面试流程进度']||d['面试进度'];d['目前手上面试或者offer情况']=d['目前手上面试或者offer情况']||d['面试进度']}
+  if(d['近2年绩效'])d['近2年绩效情况']=d['近2年绩效情况']||d['近2年绩效'];if(d['到岗时间'])d['预计到岗时间']=d['预计到岗时间']||d['到岗时间'];if(d['在职情况'])d['目前是否在职']=d['目前是否在职']||d['在职情况'];if(d['方便面试时间'])d['线上方便面试时间']=d['线上方便面试时间']||d['方便面试时间'];
+  if(d['目前base地']||d['预期base地'])d['目前base地+预期base地']=`${d['目前base地']||'待补充'} + ${d['预期base地']||'待补充'}`;
+  if(d['姓名']&&d['目前公司'])d['基本情况']=d['基本情况']||`${d['姓名']}，年龄${d['年龄']||'待补充'}岁，性别${d['性别']||'待补充'}，${d['是否统招本科']||d['学历']||'待补充'}毕业于${d['学校']||'待补充'}，目前就职于${d['目前公司']}任职${d['职位']||'待补充'}；户籍${d['户籍地']||'待补充'}，现居地${d['目前所在地']||'待补充'}，${d['婚育情况']||'待补充'}；`;
+  if(d['出生年份']||d['年龄'])d['个人情况']=d['个人情况']||`${d['出生年份']?d['出生年份']+' 出生':d['年龄']+' 岁'}，目前在${d['目前所在地']||'待补充'}，${d['婚育情况']||'待补充'}，到岗时间：${d['到岗时间']||'待补充'}`;
+  if(d['目前公司'])d['目前公司职级和绩效情况']=[d['目前公司'],d['职级']||d['职位'],d['是否带团队'],d['近2年绩效']?`绩效 ${d['近2年绩效']}`:''].filter(Boolean).join('，');
+  if(uj[0]&&uj[0].desc)d['工作核心内容']=uj[0].desc.split(/[；;。]/).filter(Boolean).slice(0,2).join('；');
+  if(d['目前base地']||d['预期base地'])d['地点']=`目前 base ${d['目前base地']||'待补充'}，期望 ${d['预期base地']||'待补充'}`;
+  if(d['目前薪资']||d['期望薪资'])d['薪酬信息']=[d['目前薪资']?`目前薪酬 ${d['目前薪资及薪资结构']||d['目前薪资']}`:'',d['期望薪资']?`期望薪酬 ${d['期望薪资']}`:''].filter(Boolean).join('，');
+  if(d['其他'])d['其他信息补充']=d['其他'];
+  /* 美团模板：八项按原标题精确落键 */
+  if(d['现居城市']&&!d['目前所在地'])d['目前所在地']=d['现居城市'];
+  if(d['在职情况'])d['一、在职情况']=d['在职情况']+(d['离职时间']?`（离职时间 ${d['离职时间']}）`:'');
+  const lr=d['离职原因']||d['看机会原因']||d['求职动机'];if(lr)d['二、离职原因（在职的话看机会原因）']=lr;
+  if(d['到岗时间'])d['三、离职需要大概时间']=d['到岗时间'];
+  if(d['目前薪资'])d['四、薪资结构（需提供具体数字）']=`基本工资（）元*（）个月+绩效（）+补贴（）+年终奖（）=合计（${d['目前薪资']}${d['薪资结构']?'，'+d['薪资结构']:''}）`;
+  if(d['期望薪资'])d['五、期望工资']=d['期望薪资'];
+  {const src=adv||(uj[0]&&uj[0].desc)||'';const items=src.split(/[。；;\n]|\d+[、.)）]\s*/).map(s=>s.trim().replace(/[，,]$/,'')).filter(s=>s.length>=4);if(items.length)d['六、推荐理由（不超过5条，每条尽量不超过30个字）']=items.slice(0,5).map((s,i)=>{if(s.length>30){const h=s.slice(0,30);const c=Math.max(h.lastIndexOf('，'),h.lastIndexOf('、'),h.lastIndexOf('：'),h.lastIndexOf('；'));s=c>=10?h.slice(0,c):h}return `${i+1}、${s}`}).join('\n')}
+  if(d['目前所在地'])d['七、现居城市（精准到市）']=d['目前所在地'];
+  if(uj[0]){const j=uj[0];const mon=s=>{if(!s)return null;if(/至今|现在|今/.test(s)){const t=new Date();return t.getFullYear()*12+t.getMonth()+1}const mm=s.match(/((?:19|20)\d{2})(?:\.(\d{1,2}))?/);return mm?+mm[1]*12+(+(mm[2]||6)):null};const gaps=[];for(let i=0;i<uj.length-1;i++){const a=mon(uj[i+1].end),b=mon(uj[i].start);if(a!=null&&b!=null&&b-a>3)gaps.push(`${uj[i+1].end}–${uj[i].start} 约 ${b-a} 个月`)}
+    d['八、最后一段经历时间核实']=`最后一段：${j.start}–${j.end} ${j.co}（请核实起止时间）`+(gaps.length?`\n空窗期：${gaps.join('；')}`:'\n经历之间未发现 3 个月以上空窗')}
+  Object.keys(d).forEach(k=>{if(!d[k])delete d[k]});
+  if(d['目前公司'])d['目前公司职级和绩效情况']=[d['目前公司'],d['职级'],d['是否带团队'],d['近2年绩效']?`绩效 ${d['近2年绩效']}`:''].filter(Boolean).join('，');
+  if(jobs[0]&&jobs[0].desc)d['工作核心内容']=jobs[0].desc.replace(/^核心职责[:：]/,'').split(/[；;。]/).filter(Boolean).slice(0,2).join('；');
+  if(d['目前base地']||d['预期base地'])d['地点']=`目前 base ${d['目前base地']||'待补充'}，期望 ${d['预期base地']||'待补充'}`;
+  if(d['目前薪资']||d['期望薪资'])d['薪酬信息']=[d['目前薪资']?`目前薪酬 ${d['目前薪资及薪资结构']||d['目前薪资']}`:'',d['期望薪资']?`期望薪酬 ${d['期望薪资']}`:''].filter(Boolean).join('，');
+  if(d['其他'])d['其他信息补充']=d['其他'];
+  D=d}
+/* 给某个字段名找值：同名 → 同义词（忽略空格、括号、序号；短同义词只做精确匹配） */
+function lookup(label){if(D[label])return D[label];const l=norm(label).replace(/^[\d一二三四五六七八九十]+[)）.、]\s*/,'');if(D[l])return D[l];let best='',bl=0;for(const [f,syns] of Object.entries(SYN)){const all=[f,...syns];const hit=all.find(s=>l===s)||all.find(s=>s.length>=3&&l.includes(s));if(!hit||hit.length<=bl)continue;const v=D[f]||all.map(s=>D[s]).find(Boolean);if(v){best=v;bl=hit.length}}return best}
+
+/* ===== 字段区渲染 ===== */
+function renderFields(){$('fields').innerHTML=S.fields.map((f,i)=>`<div class="frow" draggable="true" data-i="${i}"><span class="h">⋮⋮</span><span class="lab" contenteditable="true" spellcheck="false" data-i="${i}">${esc(f.label)}</span><div class="v" contenteditable="true" spellcheck="false" data-i="${i}" data-ph="${esc(f.hint||'待补充')}">${f.html||''}</div><span class="x" data-i="${i}" title="删除此字段">✕</span></div>`).join('');
+  $('fields').querySelectorAll('.lab').forEach(el=>{el.onblur=()=>{const f=S.fields[+el.dataset.i];const nl=el.textContent.trim();if(nl&&nl!==f.label){pushUndo(`重命名字段「${f.label}」`);f.label=nl;if(!f.touched){const v=lookup(nl);f.html=v?esc(v):''}save();renderFields()}};el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();el.blur()}}});
+  $('fields').querySelectorAll('.v').forEach(el=>{el.oninput=()=>{const f=S.fields[+el.dataset.i];f.html=el.innerHTML;f.touched=true;save()};el.onpaste=pastePlainIfNeeded});
+  $('fields').querySelectorAll('.x').forEach(el=>el.onclick=()=>{pushUndo(`删除字段「${S.fields[+el.dataset.i].label}」`);S.fields.splice(+el.dataset.i,1);save();renderFields()});
+  let from=null;$('fields').querySelectorAll('.frow').forEach(el=>{el.addEventListener('dragstart',e=>{if(e.target.closest('[contenteditable]')&&e.target.closest('[contenteditable]')!==el){e.preventDefault();return}from=+el.dataset.i;el.classList.add('drag')});el.addEventListener('dragend',()=>el.classList.remove('drag'));el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('drop',e=>{e.preventDefault();const to=+el.dataset.i;if(from!==null&&from!==to){pushUndo('调整字段顺序');const a=S.fields.splice(from,1)[0];S.fields.splice(to,0,a);save();renderFields()}from=null})});
+  renderSuggest();renderTplList();updateMeta()}
+function renderSuggest(){const have=new Set(S.fields.map(f=>f.label));const cands=Object.keys(D).filter(k=>D[k]&&!have.has(k)&&!/、|\+|&/.test(k)&&k.length<=12&&D[k].length<=80).slice(0,14);$('suggest').innerHTML=cands.length?`<span class="hint" style="padding:2px 0">资料里还有：</span>`+cands.map(k=>`<span class="chip auto" onclick="addField('${esc(k)}')">+ ${esc(k)}</span>`).join(''):''}
+function addField(label,html){if(!label)return;pushUndo(`添加字段「${label}」`);const v=html!==undefined?html:esc(lookup(label));S.fields.push({label,html:v,touched:false});save();renderFields()}
+function addFieldFromInput(){const v=$('newField').value.trim();if(!v)return;addField(v);$('newField').value='';toast(lookup(v)?`已添加「${v}」并自动填入`:`已添加「${v}」，资料中没有对应信息，标为待补充`)}
+$('newField').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addFieldFromInput()}};
+function refillUntouched(){S.fields.forEach(f=>{if(!f.touched){const v=lookup(f.label);f.html=v?esc(v):''}})}
+function applyTpl(t,replace){pushUndo(`加载模板「${t.name}」`);if(replace)S.fields=[];const have=new Set(S.fields.map(f=>f.label));t.fields.forEach(x=>{const {label,hint}=tf(x);if(!have.has(label))S.fields.push({label,hint,html:esc(lookup(label)),touched:false})});S.tplName=t.name;save();renderFields();closeModal();const filled=S.fields.filter(f=>f.html&&f.html.replace(/<[^>]+>/g,'').trim()).length;toast(S.resume?`已按「${t.name}」加载 ${t.fields.length} 个字段：${filled} 个已从简历自动填入，${S.fields.length-filled} 个待补充`:`已按「${t.name}」加载 ${t.fields.length} 个字段；上传简历后会自动填入`)}
+/* 左侧模板面板：整套载入 / 追加 / 展开后逐个勾选字段 */
+let tplOpen=null;
+function renderTplList(){const all=allTpls();const have=new Set(S.fields.map(f=>f.label));$('tplList').innerHTML=all.map(t=>{const on=tplOpen===t.id;const labels=t.fields.map(tf);const n=labels.filter(x=>have.has(x.label)).length;return `<div class="tplrow${S.tplName===t.name?' cur':''}"><div class="tplhead"><b onclick="applyTplById('${t.id}',true)" title="整套载入（替换当前字段）">${esc(t.name)}</b><span class="hint">${n}/${labels.length}</span><span class="sp"></span><button class="sm" onclick="applyTplById('${t.id}',false)" title="把缺的字段追加到现有字段后面">追加</button><button class="sm ghost" onclick="tplOpen=tplOpen==='${t.id}'?null:'${t.id}';renderTplList()">${on?'收起':'选字段'}</button><button class="sm ghost" onclick="editTpl('${t.id}')" title="改名称、字段、提示">编辑</button></div>${on?`<div class="hint" style="margin:2px 0 6px">${esc(t.note||'')}</div><div class="tplfields">${labels.map(x=>`<label><input type="checkbox" ${have.has(x.label)?'checked':''} onchange="toggleTplField(this,'${esc(x.label)}','${esc(x.hint)}')"> ${esc(x.label)}</label>`).join('')}</div>`:''}</div>`}).join('')}
+function toggleTplField(cb,label,hint){if(cb.checked){pushUndo(`勾选字段「${label}」`);S.fields.push({label,hint,html:esc(lookup(label)),touched:false});save();renderFields()}else{const i=S.fields.findIndex(f=>f.label===label);if(i<0)return;const f=S.fields[i];if(f.touched&&f.html.replace(/<[^>]+>/g,'').trim()&&!confirm(`「${label}」里已经有内容，确定从文档里去掉？`)){cb.checked=true;return}pushUndo(`取消字段「${label}」`);S.fields.splice(i,1);save();renderFields()}}
+
+/* ===== 简历区 / 标题 / 水印 ===== */
+function pushResume(){const html=S.srcHtml||textToHtml(S.resume||'');$('resumeDoc').innerHTML=showImg?pagesHtml():html;S.resumeHtml=$('resumeDoc').innerHTML;save()}
+function toggleResume(){pushUndo(S.withResume?'不附简历':'附上简历');S.withResume=!S.withResume;save();updateMeta()}
+function updateMeta(){const name=(D['姓名']||S.fields.find(f=>f.label==='姓名')?.html?.replace(/<[^>]+>/g,'')||'').trim();const pos=S.position||'';const t=`${pos||'推荐岗位'}-${name||'候选人姓名'}`;if(!S.titleTouched)$('docTitle').textContent=t;$('fname').textContent=`${pos||'岗位'}-${name||'姓名'}.pdf`;
+  $('resumeDoc').style.display=S.withResume?'':'none';$('resToggle').textContent=S.withResume?'不附简历':'附上简历';$('resDivider').querySelector('span').textContent=S.withResume?'以下为候选人原始简历':'（本次不附简历）';applyWm()}
+function applyWm(){S.wm=$('wmOn').checked;S.wmText=$('wmText').value;save();const p=$('paper');p.classList.toggle('wm',S.wm);$('wmlayer').innerHTML=S.wm?`<span style="opacity:.12;font-size:26px">${esc(S.wmText)}</span>`.repeat(10):''}
+$('docTitle').oninput=()=>{S.title=$('docTitle').textContent;S.titleTouched=true;save()};
+$('resumeDoc').oninput=()=>{S.resumeHtml=$('resumeDoc').innerHTML;save()};
+function pastePlainIfNeeded(e){/* 允许富文本粘贴；仅在单字段里压成一行 */}
+
+/* ===== 撤销 / 重做：结构性操作（模板、字段、分页、带入简历、格式）都可撤销；字段里的打字用浏览器自带的 ⌘Z ===== */
+const UNDO=[],REDO=[];
+function snap(){return JSON.stringify({fields:S.fields,resumeHtml:$('resumeDoc').innerHTML,title:$('docTitle').textContent,titleTouched:S.titleTouched,withResume:S.withResume,tplName:S.tplName,breakBefore:!!S.breakBefore,resume:S.resume||'',srcHtml:S.srcHtml||'',file:S.file||'',page:S.page||null,position:S.position||'',client:S.client||''})}
+function pushUndo(label){UNDO.push({label,state:snap()});if(UNDO.length>60)UNDO.shift();REDO.length=0;renderUndo()}
+function restore(st){const o=JSON.parse(st);S.fields=o.fields;S.resumeHtml=o.resumeHtml;S.title=o.title;S.titleTouched=o.titleTouched;S.withResume=o.withResume;S.tplName=o.tplName;S.breakBefore=o.breakBefore;if('resume' in o){S.resume=o.resume;S.srcHtml=o.srcHtml;S.file=o.file;S.page=o.page;S.position=o.position;S.client=o.client;$('position').value=S.position;$('client').value=S.client;showFile();applyPageSize();extract()}showImg=false;$('resumeDoc').contentEditable='true';$('resumeDoc').innerHTML=o.resumeHtml;$('docTitle').textContent=o.title;renderBreak();renderFields();updateMeta();save()}
+function undo(){const u=UNDO.pop();if(!u){toast('没有可撤销的操作');return}REDO.push({label:u.label,state:snap()});restore(u.state);renderUndo();toast('已撤销：'+u.label)}
+function redo(){const r=REDO.pop();if(!r){toast('没有可重做的操作');return}UNDO.push({label:r.label,state:snap()});restore(r.state);renderUndo();toast('已重做：'+r.label)}
+function renderUndo(){const u=UNDO[UNDO.length-1],r=REDO[REDO.length-1];$('undoBtn').disabled=!u;$('redoBtn').disabled=!r;$('undoBtn').title=u?`撤销：${u.label}（⌘Z）`:'没有可撤销的操作';$('redoBtn').title=r?`重做：${r.label}（⇧⌘Z）`:'重做';$('undoHint').textContent=u?u.label:''}
+document.addEventListener('keydown',e=>{if(!(e.metaKey||e.ctrlKey)||e.key.toLowerCase()!=='z')return;if(document.activeElement&&document.activeElement.isContentEditable)return;e.preventDefault();e.shiftKey?redo():undo()});
+function renderBreak(){$('preBreak').style.display=S.breakBefore?'':'none'}
+function removeBreak(el){pushUndo('删除分页符');if(el.id==='preBreak'){S.breakBefore=false;renderBreak()}else{const host=el.closest('#resumeDoc');el.remove();if(host)S.resumeHtml=host.innerHTML}save();toast('已删除分页符（可撤销）')}
+/* ===== 格式刷：取一处的颜色/粗斜/下划线/字号/底色，刷到另一处 ===== */
+let BRUSH=null,brushSticky=false;
+function styleAt(){const sel=getSelection();if(!sel.rangeCount)return null;let n=sel.anchorNode;if(!n)return null;if(n.nodeType===3)n=n.parentElement;const cs=getComputedStyle(n);return{color:cs.color,bg:cs.backgroundColor,bold:+cs.fontWeight>=600,italic:cs.fontStyle==='italic',underline:/underline/.test(cs.textDecorationLine),strike:/line-through/.test(cs.textDecorationLine),size:cs.fontSize}}
+function brushClick(e){if(BRUSH&&e.detail<2){endBrush();toast('已退出格式刷');return}const st=editHost()&&styleAt();if(!st){toast('先把光标放在（或选中）一段带格式的文字上，再点格式刷');return}BRUSH=st;brushSticky=e.detail>=2;$('brushBtn').classList.add('on');document.body.classList.add('brushing');toast(brushSticky?'格式刷已锁定：可以连续刷多处，按 Esc 退出':'格式刷已取色：现在去选中要套用的文字')}
+function endBrush(){BRUSH=null;brushSticky=false;$('brushBtn').classList.remove('on');document.body.classList.remove('brushing')}
+function applyBrush(){if(!BRUSH)return;const host=editHost();const sel=getSelection();if(!host||!sel.rangeCount||sel.isCollapsed)return;const cur=styleAt();pushUndo('格式刷');document.execCommand('styleWithCSS',false,true);document.execCommand('foreColor',false,BRUSH.color);document.execCommand('hiliteColor',false,/rgba\(0, 0, 0, 0\)|transparent/.test(BRUSH.bg)?'transparent':BRUSH.bg);if(cur.bold!==BRUSH.bold)document.execCommand('bold');if(cur.italic!==BRUSH.italic)document.execCommand('italic');if(cur.underline!==BRUSH.underline)document.execCommand('underline');if(cur.strike!==BRUSH.strike)document.execCommand('strikeThrough');document.execCommand('fontSize',false,'7');host.querySelectorAll('span[style*=xxx-large],font[size=\'7\']').forEach(el=>{el.removeAttribute('size');el.style.fontSize=BRUSH.size});syncHost(host);if(!brushSticky)endBrush();toast(brushSticky?'已套用，格式刷仍锁定（Esc 退出）':'已套用格式')}
+function syncHost(host){if(host.classList.contains('v')){const f=S.fields[+host.dataset.i];if(f){f.html=host.innerHTML;f.touched=true}}if(host.id==='resumeDoc')S.resumeHtml=host.innerHTML;save()}
+document.addEventListener('mouseup',e=>{if(BRUSH&&e.target.closest('#paper'))setTimeout(applyBrush,20)});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&BRUSH){endBrush();toast('已退出格式刷')}});
+/* 统一字号：简历区里 ≤16px 的零碎字号都去掉（回到正文 14px），更大的标题保留 */
+function unifySize(){const host=$('resumeDoc');let n=0;pushUndo('统一字号');host.querySelectorAll('[style*=font-size]').forEach(el=>{const px=parseFloat(el.style.fontSize);if(!isNaN(px)&&px<=16||/small|medium|large$/.test(el.style.fontSize)&&!/x-large/.test(el.style.fontSize)){el.style.fontSize='';if(!el.getAttribute('style'))el.removeAttribute('style');n++}});host.querySelectorAll('font[size]').forEach(el=>{if(+el.getAttribute('size')<=4){el.removeAttribute('size');n++}});S.resumeHtml=host.innerHTML;save();toast(n?`已统一 ${n} 处字号为正文大小（可撤销）`:'简历区没有需要统一的字号')}
+/* ===== 格式工具 ===== */
+function editHost(){const sel=window.getSelection();if(!sel||!sel.rangeCount)return null;const n=sel.anchorNode;const el=n&&(n.nodeType===1?n:n.parentElement);return el&&el.closest('#paper [contenteditable="true"]')}
+function fmt(cmd,val){const host=editHost();if(!host){toast('先在文档里选中一段文字（推荐语或简历都可以），再点格式按钮');return}pushUndo('格式修改');const sel=window.getSelection();const range=sel.getRangeAt(0).cloneRange();if(document.activeElement!==host){host.focus();sel.removeAllRanges();sel.addRange(range)}document.execCommand('styleWithCSS',false,true);document.execCommand(cmd,false,val||null);if(host.classList.contains('v')){const f=S.fields[+host.dataset.i];if(f){f.html=host.innerHTML;f.touched=true}}if(host.id==='resumeDoc')S.resumeHtml=host.innerHTML;if(host.id==='docTitle'){S.title=host.textContent;S.titleTouched=true}save()}
+/* 选中文字后在旁边浮出小工具条（推荐语、简历都可用） */
+function placeBubble(){const b=$('bubble');const sel=window.getSelection();const host=editHost();if(!host||!sel||sel.isCollapsed||!sel.rangeCount){b.classList.remove('on');return}const rect=sel.getRangeAt(0).getBoundingClientRect();if(!rect.width&&!rect.height){b.classList.remove('on');return}b.style.left=(rect.left+rect.width/2)+'px';b.style.top=Math.max(60,rect.top)+'px';b.classList.add('on')}
+document.addEventListener('selectionchange',()=>{clearTimeout(window._bt);window._bt=setTimeout(placeBubble,120)});document.querySelector('.canvas').addEventListener('scroll',placeBubble);document.addEventListener('mousedown',e=>{if(!e.target.closest('#bubble')&&!e.target.closest('#paper'))$('bubble').classList.remove('on')});
+function insertBreak(){const sel=window.getSelection();const node=sel.anchorNode&&(sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentElement);const host=node&&node.closest('#resumeDoc');pushUndo('插入分页');if(host){document.execCommand('insertHTML',false,'<div class="pagebreak" contenteditable="false" title="点击删除这个分页符" onclick="removeBreak(this)"><span>分页 ✕</span></div><br>');S.resumeHtml=host.innerHTML;save();toast('已插入分页，点分页符可删除，也可撤销')}else{S.breakBefore=true;save();renderBreak();toast('已在推荐语与简历之间插入分页；点分页符可删除，也可撤销')}}
+function addSection(){const name=prompt('段落标题（如：三、教育背景）','补充说明');if(!name)return;addField(name,'')}
+
+/* ===== 输出 ===== */
+function docHtml(){const p=$('paper').cloneNode(true);p.querySelectorAll('.h,.x,.ctl,.addrow,.chips,.wmlayer').forEach(e=>e.remove());if(!S.breakBefore)p.querySelector('#preBreak')?.remove();p.querySelectorAll('.pagebreak').forEach(e=>{e.removeAttribute('onclick');e.removeAttribute('title')});p.querySelectorAll('[contenteditable]').forEach(e=>e.removeAttribute('contenteditable'));p.querySelectorAll('.v').forEach(e=>{if(!e.textContent.trim())e.textContent='【待补充】'});if(!S.withResume){p.querySelector('#resumeDoc')?.remove();p.querySelector('#resDivider')?.remove()}return p}
+function plainText(){const p=docHtml();let out=[];out.push(p.querySelector('.doc-title')?.textContent.trim());p.querySelectorAll('.sec-h span:first-child').forEach(()=>{});p.querySelectorAll('.frow').forEach(r=>out.push(`${r.querySelector('.lab').textContent.trim()}：${r.querySelector('.v').innerText.trim()}`));if(S.withResume){out.push('','—— 候选人原始简历 ——',p.querySelector('#resumeDoc')?.innerText||'')}return out.join('\n')}
+function copyText(){navigator.clipboard.writeText(plainText()).then(()=>toast('已复制纯文本版推荐报告')).catch(()=>toast('复制失败'))}
+/* 页面尺寸：跟随候选人简历 PDF 的页面大小与文字边距（无 PDF 时按 A4），屏幕、Word、PDF 三处一致 */
+function pageSetup(){const pg=S.page&&S.page.w>200?S.page:{w:595.3,h:841.9};const cl=(v,d)=>isFinite(v)&&v>0?Math.min(90,Math.max(28,v)):d;const r1=v=>Math.round(v*10)/10;return{w:r1(pg.w),h:r1(pg.h),ml:r1(cl(pg.ml,56)),mr:r1(cl(pg.mr,56)),mt:r1(Math.min(72,cl(pg.mt,46))),mb:r1(Math.min(72,cl(pg.mb,46)))}}
+function applyPageSize(){const g=pageSetup();const px=v=>Math.round(v*96/72);const pa=$('paper');pa.style.width=Math.min(1000,Math.max(700,px(g.w)))+'px';pa.style.padding=`${px(g.mt)}px ${px(g.mr)}px ${px(g.mb)}px ${px(g.ml)}px`;$('pageCss').textContent=`@page{size:${g.w}pt ${g.h}pt;margin:0}`}
+function exportWord(){const g=pageSetup();const P=getComputedStyle(document.documentElement).getPropertyValue('--p').trim()||'#4f46e5';
+  /* 预览里实际测到的尺寸（标签列宽、头像与旁边段落的高度）照搬到 Word，保证两边一致 */
+  const labW=Math.ceil(Math.max(90,...[...$('fields').querySelectorAll('.lab')].map(e=>e.getBoundingClientRect().width)))+6;
+  const liveRes=$('resumeDoc');const floats=[];liveRes.querySelectorAll('img').forEach(im=>{if(!/float:\s*right/.test(im.getAttribute('style')||''))return;const pp=im.parentElement;const box=pp.parentElement;const i=[...box.children].indexOf(pp);const path=[];let n=box;while(n&&n!==liveRes){path.unshift([...n.parentElement.children].indexOf(n));n=n.parentElement}if(!n)return;const ih=im.getBoundingClientRect().height;const sibs=[...box.children];let acc=0,j=i;while(j+1<sibs.length&&acc<ih&&j-i<14){j++;acc+=sibs[j].getBoundingClientRect().height}floats.push({path,i,j,w:Math.round(im.getBoundingClientRect().width)})});
+  const isCol=c=>c.tagName==='SPAN'&&/inline-block/.test(c.getAttribute('style')||'');const colsOf=pp=>{const cs=[...pp.children].filter(isCol);return cs.length>1&&cs.length===pp.children.length?cs:null};
+  const liveCols=[...liveRes.querySelectorAll('p')].map(colsOf).filter(Boolean).map(cs=>cs.map(c=>{const r=c.getBoundingClientRect();const rg=document.createRange();rg.selectNodeContents(c);const t=rg.getBoundingClientRect();return{alloc:r.width,text:t.width}}));
+  const p=docHtml();const cw=Math.round((g.w-g.ml-g.mr)*96/72);
+  /* 1. 推荐语字段 → 两列表格：标签列定宽不换行，值（含【待补充】）在同一行右侧 */
+  const fl=p.querySelector('#fields');if(fl){const t=document.createElement('table');t.setAttribute('cellpadding','0');t.setAttribute('cellspacing','0');t.style.cssText='width:100%;border-collapse:collapse';fl.querySelectorAll('.frow').forEach(r=>{const tr=t.insertRow();const a=tr.insertCell(),b=tr.insertCell();a.setAttribute('width',labW);a.style.cssText=`width:${labW}px;font-weight:bold;vertical-align:top;white-space:nowrap;padding:1pt 0`;a.textContent=(r.querySelector('.lab')?.textContent||'')+'：';b.style.cssText='vertical-align:top;padding:1pt 0';const v=r.querySelector('.v');b.innerHTML=v?v.innerHTML:'';if(/^【待补充】$/.test(b.textContent.trim()))b.innerHTML='<span style="color:#b45309">【待补充】</span>'});fl.replaceWith(t)}
+  /* 2. 右浮动头像 → 与旁边几段并排的两列表格（Word 不认 float，会把图挤出版心） */
+  const cres=p.querySelector('#resumeDoc');if(cres){for(const f of floats.slice().reverse()){let box=cres;for(const k of f.path){box=box&&box.children[k]}if(!box)continue;const sibs=[...box.children];const pp=sibs[f.i];const im=pp&&pp.querySelector('img');if(!im)continue;const t=document.createElement('table');t.setAttribute('cellpadding','0');t.setAttribute('cellspacing','0');t.style.cssText='width:100%;border-collapse:collapse;border:none';const tr=t.insertRow();const L=tr.insertCell(),R=tr.insertCell();L.style.cssText='vertical-align:top;padding-right:10pt';R.setAttribute('width',f.w);R.style.cssText=`width:${f.w}px;vertical-align:top;text-align:right`;im.removeAttribute('style');im.setAttribute('width',f.w);R.appendChild(im);for(let k=f.i+1;k<=f.j;k++)if(sibs[k])L.appendChild(sibs[k]);box.replaceChild(t,pp)}}
+  /* 3. 分栏行 → 表格。列宽按预览实测：前几列用原来的列距，最后一列按文字宽度；总宽超过版心时先吃掉各列的空白，再整体缩放，避免末列被挤成一字一行 */
+  let ci=0;p.querySelectorAll('.resume p').forEach(pp=>{const cells=colsOf(pp);if(!cells)return;const m=liveCols[ci++]||cells.map(c=>({alloc:parseInt(c.style.minWidth)||80,text:60}));const n=cells.length;let w=cells.map((c,i)=>{const mm=m[i]||{alloc:80,text:60};return Math.ceil(i<n-1?Math.max(mm.alloc,mm.text+4):mm.text+6)});let over=w.reduce((a,b)=>a+b,0)-cw;for(let i=n-2;i>=0&&over>0;i--){const slack=w[i]-Math.ceil((m[i]?m[i].text:0)+4);const d=Math.max(0,Math.min(slack,over));w[i]-=d;over-=d}if(over>0){const f=cw/w.reduce((a,b)=>a+b,0);w=w.map(x=>Math.floor(x*f))}
+    const t=document.createElement('table');t.setAttribute('cellpadding','0');t.setAttribute('cellspacing','0');t.setAttribute('width',cw);t.style.cssText=`width:${cw}px;border-collapse:collapse;border:none`;if(pp.style.marginTop)t.style.marginTop=pp.style.marginTop;const tr=t.insertRow();cells.forEach((c,i)=>{const td=tr.insertCell();td.setAttribute('width',w[i]);td.style.cssText=`width:${w[i]}px;vertical-align:top;border:none;padding:0${i<n-1?' 6px 0 0':''}`;if(pp.style.fontSize)td.style.fontSize=pp.style.fontSize;td.innerHTML=c.innerHTML});pp.replaceWith(t)});
+  /* 4. 其余图片：宽度写成属性，不超过版心 */
+  p.querySelectorAll('img').forEach(im=>{if(im.hasAttribute('width'))return;let w=parseFloat(im.style.width)||0;if(/%/.test(im.style.width))w=cw*w/100;if(w)im.setAttribute('width',Math.min(cw,Math.round(w)));im.style.width=''});
+  /* 5. 分页符；文本里的换行与连续空格（Word 不认 pre-wrap） */
+  p.querySelectorAll('.pagebreak').forEach(e=>{const br=document.createElement('br');br.setAttribute('clear','all');br.style.pageBreakBefore='always';e.replaceWith(br)});
+  const tw=document.createTreeWalker(p,NodeFilter.SHOW_TEXT);const tn=[];while(tw.nextNode())tn.push(tw.currentNode);tn.forEach(t=>{if(/^\s*$/.test(t.data)||!/\n|  /.test(t.data))return;const frag=document.createDocumentFragment();t.data.split('\n').forEach((s,i)=>{if(i)frag.appendChild(document.createElement('br'));frag.appendChild(document.createTextNode(s.replace(/ {2}/g,'  ')))});t.replaceWith(frag)});
+  const wm=S.wm?`<p style="color:#999;font-size:9pt">[水印：${esc(S.wmText)}]</p>`:'';
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]--><style>@page WordSection1{size:${g.w}pt ${g.h}pt;margin:${g.mt}pt ${g.mr}pt ${g.mb}pt ${g.ml}pt;mso-page-orientation:portrait}div.WordSection1{page:WordSection1}body{font-family:微软雅黑,"Microsoft YaHei",sans-serif;font-size:10.5pt;line-height:1.85;color:#111}.doc-title{font-size:15pt;font-weight:bold;text-align:center;margin:0 0 9pt}.sec-h{font-size:11pt;font-weight:bold;margin:10pt 0 4pt;padding-left:6pt;border-left:2.25pt solid ${P}}.divider{color:#889;font-size:9pt;text-align:center;margin:16pt 0 8pt}.resume p{margin:0}table{border-collapse:collapse;border:none}td{padding:0;border:none}</style></head><body><div class="WordSection1">${wm}${p.innerHTML}</div></body></html>`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'}));a.download=$('fname').textContent.replace(/\.pdf$/,'.doc');a.click();toast('已导出 Word')}
+function exportPdf(){const p=docHtml();if(S.wm)p.classList.add('wm');const pa=$('printArea');pa.innerHTML='';pa.appendChild(p);if(S.wm){const l=document.createElement('div');l.className='wmlayer';l.style.display='grid';l.innerHTML=`<span style="opacity:.12;font-size:26px">${esc(S.wmText)}</span>`.repeat(10);p.prepend(l)}pa.style.display='block';document.title=$('fname').textContent.replace(/\.pdf$/,'');setTimeout(()=>{window.print();pa.style.display='none'},60);toast('在打印对话框选择「另存为 PDF」')}
+
+/* ===== 模板 / 历史 ===== */
+function openTpls(){const all=allTpls();$('modalBox').innerHTML=`<h3>字段模板 <small class="hint">点卡片整套载入；每套都可以编辑，也可以新建</small></h3><div class="tplgrid">${all.map(t=>`<div class="tplcard" onclick="applyTplById('${t.id}',true)"><b>${esc(t.name)} <span class="hint">${t.fields.length} 项${t.builtin?'':' · 自定义'}</span></b><span>${esc(t.note||'')}</span><div class="hint" style="margin-top:4px">${t.fields.map(x=>esc(tf(x).label)).join(' · ')}</div><div style="margin-top:6px;display:flex;gap:6px"><button class="sm" onclick="event.stopPropagation();applyTplById('${t.id}',false)">追加到现有字段</button><button class="sm ghost" onclick="event.stopPropagation();editTpl('${t.id}')">编辑</button></div></div>`).join('')}</div><div style="display:flex;gap:8px;align-items:center;margin-top:14px"><button onclick="newTpl(false)">新建模板</button><button class="ghost" onclick="newTpl(true)">把当前字段存为模板</button><span class="sp" style="flex:1"></span><button onclick="closeModal()">关闭</button></div>`;$('modal').classList.add('on')}
+function applyTplById(id,replace){const t=allTpls().find(x=>x.id===id);if(t)applyTpl(t,replace)}
+/* ===== 模板编辑器：改名、改说明、增删改字段与提示、排序；内置模板可恢复默认，自定义模板可删除 ===== */
+let TD=null;
+function editTpl(id){const t=allTpls().find(x=>x.id===id);if(!t)return;TD={id:t.id,name:t.name,note:t.note||'',builtin:!!t.builtin,fields:t.fields.map(tf).map(x=>({l:x.label,h:x.hint}))};renderTplEditor()}
+function newTpl(fromDoc){TD={id:'u'+Date.now(),name:'',note:'',builtin:false,isNew:true,fields:fromDoc&&S.fields.length?S.fields.map(f=>({l:f.label,h:f.hint||''})):[{l:'',h:''}]};renderTplEditor();const n=$('tdName');n&&n.focus()}
+function renderTplEditor(){const t=TD;$('modalBox').innerHTML=`<h3>${t.isNew?'新建模板':'编辑模板'} <small class="hint">字段名就是文档里的标题；提示只在字段为空时灰字显示，不会导出</small></h3>
+<div class="tpled"><div class="row"><label>名称</label><input id="tdName" value="${esc(t.name)}" placeholder="如：某某客户" style="width:230px" oninput="TD.name=this.value"><label style="width:auto">说明</label><input value="${esc(t.note)}" placeholder="写给顾问看的填写要求（可空）" style="flex:1" oninput="TD.note=this.value"></div>
+<div class="row head"><span style="width:36px"></span><span style="width:230px">字段名</span><span style="flex:1">提示 / 填写要求（可空）</span><span style="width:96px"></span></div>
+<div id="tdRows">${t.fields.map((f,i)=>`<div class="row"><span class="hint" style="width:36px;text-align:right">${i+1}.</span><input class="l" value="${esc(f.l)}" placeholder="字段名" oninput="TD.fields[${i}].l=this.value"><input class="h" value="${esc(f.h)}" placeholder="提示" oninput="TD.fields[${i}].h=this.value"><button class="sm ghost" onclick="tdMove(${i},-1)" title="上移">↑</button><button class="sm ghost" onclick="tdMove(${i},1)" title="下移">↓</button><button class="sm ghost danger" onclick="tdDel(${i})" title="删除">✕</button></div>`).join('')}</div>
+<div style="display:flex;gap:6px;margin-top:6px"><button class="sm" onclick="tdAdd()">+ 添加字段</button>${S.fields.length?`<button class="sm ghost" onclick="tdImport()">从当前文档字段导入</button>`:''}</div></div>
+<div style="display:flex;gap:8px;align-items:center;margin-top:14px">${t.builtin?`<button class="sm ghost" onclick="tdReset()">恢复默认</button>`:(t.isNew?'':`<button class="sm danger" onclick="tdDelete()">删除模板</button>`)}<span style="flex:1"></span><button class="ghost" onclick="closeModal()">取消</button><button onclick="tdSave()">保存</button></div>`;$('modal').classList.add('on')}
+function tdAdd(){TD.fields.push({l:'',h:''});renderTplEditor();const r=$('tdRows').lastElementChild;r&&r.querySelector('input.l').focus()}
+function tdDel(i){TD.fields.splice(i,1);renderTplEditor()}
+function tdMove(i,d){const j=i+d;if(j<0||j>=TD.fields.length)return;[TD.fields[i],TD.fields[j]]=[TD.fields[j],TD.fields[i]];renderTplEditor()}
+function tdImport(){S.fields.forEach(f=>{if(!TD.fields.some(x=>x.l===f.label))TD.fields.push({l:f.label,h:f.hint||''})});TD.fields=TD.fields.filter(x=>x.l.trim());renderTplEditor()}
+function tdReset(){const o=TPLS.find(x=>x.id===TD.id);if(!o)return;TD.name=o.name;TD.note=o.note||'';TD.fields=o.fields.map(tf).map(x=>({l:x.label,h:x.hint}));renderTplEditor();toast('已恢复为默认内容，点「保存」生效')}
+function tdDelete(){if(!confirm(`删除模板「${TD.name}」？文档里已加载的字段不受影响`))return;S.tpls=S.tpls.filter(x=>x.id!==TD.id);save();closeModal();renderTplList();toast('模板已删除')}
+function tdSave(){const name=TD.name.trim();const fields=TD.fields.map(x=>({l:x.l.trim(),h:x.h.trim()})).filter(x=>x.l);if(!name){toast('请填模板名称');return}if(!fields.length){toast('至少要有一个字段');return}const seen=new Set();for(const f of fields){if(seen.has(f.l)){toast(`字段「${f.l}」重复了`);return}seen.add(f.l)}const t={id:TD.id,name,note:TD.note.trim(),builtin:TD.builtin,fields:fields.map(f=>f.h?{l:f.l,h:f.h}:f.l)};const i=S.tpls.findIndex(x=>x.id===t.id);if(i<0)S.tpls.push(t);else{if(S.tplName===S.tpls[i].name)S.tplName=name;S.tpls[i]=t}save();closeModal();renderTplList();toast(TD.isNew?`模板「${name}」已新建，点名称即可载入`:`模板「${name}」已保存`)}
+function saveHist(){const name=$('fname').textContent.replace(/\.pdf$/,'');S.hist.unshift({id:Date.now(),time:new Date().toLocaleString(),name,client:S.client,tpl:S.tplName||'自定义',state:JSON.parse(JSON.stringify({fields:S.fields,resumeHtml:$('resumeDoc').innerHTML,title:$('docTitle').textContent,titleTouched:S.titleTouched,resume:S.resume,srcHtml:S.srcHtml,page:S.page||null,notes:S.notes,position:S.position,client:S.client,file:S.file,withResume:S.withResume,wm:S.wm,wmText:S.wmText,tplName:S.tplName}))});save();toast('已保存到历史')}
+function openHist(){$('modalBox').innerHTML=`<h3>历史记录 <small class="hint">保存在本机浏览器</small></h3><table class="t"><tr><th>时间</th><th>文件</th><th>客户</th><th>字段模板</th><th></th></tr>${S.hist.map(h=>`<tr><td>${h.time}</td><td><b>${esc(h.name)}</b></td><td>${esc(h.client||'—')}</td><td>${esc(h.tpl)}</td><td><button class="sm" onclick="loadHist(${h.id})">打开</button> <button class="sm danger" onclick="delHist(${h.id})">删除</button></td></tr>`).join('')||'<tr><td colspan="5" class="hint">暂无</td></tr>'}</table><div style="text-align:right;margin-top:12px"><button onclick="closeModal()">关闭</button></div>`;$('modal').classList.add('on')}
+function loadHist(id){const h=S.hist.find(x=>x.id===id);if(!h)return;pushUndo('载入历史记录');Object.assign(S,JSON.parse(JSON.stringify(h.state)));save();initUI();closeModal();toast('已载入')}
+function delHist(id){S.hist=S.hist.filter(x=>x.id!==id);save();openHist()}
+function closeModal(){$('modal').classList.remove('on')}
+$('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
+function toggleSide(){const m=$('main');m.classList.toggle('collapsed');$('sideBtn').textContent=m.classList.contains('collapsed')?'展开资料栏':'收起资料栏'}
+
+/* ===== PDF / Word 原格式还原 ===== */
+const PDFJS_VER='3.11.174';
+let PAGES=[],showImg=false;
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('无法加载解析库（需要联网）'));document.head.appendChild(s)})}
+async function ensurePdfjs(){if(window.pdfjsLib)return;await loadScript(`https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VER}/legacy/build/pdf.min.js`);pdfjsLib.GlobalWorkerOptions.workerSrc=`https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VER}/legacy/build/pdf.worker.min.js`}
+async function ensureMammoth(){if(window.mammoth)return;await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js')}
+function textToHtml(t){return String(t||'').split('\n').map(l=>`<p>${esc(l)||'<br>'}</p>`).join('')}
+/* 从渲染后的页面像素里取文字颜色：取非白像素里最常见的一档颜色；灰/黑返回 null（用默认色） */
+function inkColor(px,W,H,x0,y0,x1,y1){x0=Math.max(0,Math.floor(x0));y0=Math.max(0,Math.floor(y0));x1=Math.min(W-1,Math.ceil(x1));y1=Math.min(H-1,Math.ceil(y1));const bk=new Map();let best=null,bc=0;
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const i=(y*W+x)*4;const r=px[i],g=px[i+1],b=px[i+2];if(r+g+b>600)continue;const k=((r>>4)<<8)|((g>>4)<<4)|(b>>4);let e=bk.get(k);if(!e){e={n:0,r:0,g:0,b:0};bk.set(k,e)}e.n++;e.r+=r;e.g+=g;e.b+=b;if(e.n>bc){bc=e.n;best=e}}
+  if(!best||bc<3)return null;const r=Math.round(best.r/best.n),g=Math.round(best.g/best.n),b=Math.round(best.b/best.n);if(Math.max(r,g,b)-Math.min(r,g,b)<40)return null;return snapColor(r,g,b)}
+/* 同一份文档里相近的颜色归成一种，避免 #ee0101 / #ee0202 之类抖动 */
+let PALETTE=[];function snapColor(r,g,b){for(const c of PALETTE){if(Math.hypot(c[0]-r,c[1]-g,c[2]-b)<28)return c[3]}const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');PALETTE.push([r,g,b,hex]);return hex}
+/* 有些 PDF 字体把「长、贝、车、门」等字输出成康熙部首 / CJK 部首补充区的同形码位（⻓ ⻉ ⻋ ⻔），复制出来是乱码、也匹配不到关键词，统一换回常用汉字 */
+const RAD={'⺀':'冫','⺁':'厂','⺂':'乛','⺃':'乚','⺄':'乚','⺅':'亻','⺆':'冂','⺇':'冂','⺈':'刀','⺉':'刂','⺊':'卜','⺋':'卩','⺌':'小','⺍':'小','⺎':'尢','⺏':'尢','⺐':'尢','⺑':'尢','⺒':'巳','⺓':'幺','⺔':'彐','⺕':'彐','⺖':'忄','⺗':'心','⺘':'扌','⺙':'攵','⺛':'无','⺜':'日','⺝':'月','⺞':'歹','⺟':'母','⺠':'民','⺡':'氵','⺢':'氺','⺣':'灬','⺤':'爫','⺥':'爫','⺦':'丬','⺧':'牛','⺨':'犭','⺩':'王','⺪':'疋','⺫':'罒','⺬':'示','⺭':'礻','⺮':'竹','⺯':'糸','⺰':'纟','⺱':'网','⺲':'罒','⺳':'网','⺴':'网','⺵':'网','⺶':'羊','⺷':'羊','⺸':'羊','⺹':'老','⺺':'老','⺻':'聿','⺼':'月','⺽':'臼','⺾':'艹','⺿':'艹','⻀':'艹','⻁':'虎','⻂':'衤','⻃':'西','⻄':'西','⻅':'见','⻆':'角','⻇':'角','⻈':'讠','⻉':'贝','⻊':'足','⻋':'车','⻌':'辶','⻍':'辶','⻎':'辶','⻏':'阝','⻐':'钅','⻑':'長','⻒':'長','⻓':'长','⻔':'门','⻕':'阝','⻖':'阝','⻗':'雨','⻘':'青','⻙':'韦','⻚':'页','⻛':'风','⻜':'飞','⻝':'食','⻞':'飠','⻟':'饣','⻠':'首','⻢':'马','⻣':'骨','⻤':'鬼','⻥':'鱼','⻦':'鸟','⻧':'卤','⻨':'麦','⻩':'黄','⻪':'黾','⻫':'齐','⻬':'齐','⻭':'齿','⻮':'齿','⻯':'龙','⻰':'龙','⻱':'龟','⻲':'龟','⻳':'龟'};
+const fixRad=s=>s.replace(/[\u2E80-\u2FD5]/g,c=>RAD[c]||c.normalize('NFKC'));
+async function pdfToHtml(buf,onProgress){await ensurePdfjs();const pdf=await pdfjsLib.getDocument({data:buf,cMapUrl:`https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VER}/cmaps/`,cMapPacked:true}).promise;
+  const SC=2.5,lines=[];let chars=0,serif=0,sans=0;PAGES=[];PALETTE=[];const WM=new Set();let nImgs=0;let PG=null;
+  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p);const vp=page.getViewport({scale:SC});const cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;const ctx=cv.getContext('2d',{willReadFrequently:true});
+    await page.render({canvasContext:ctx,viewport:vp}).promise;const img=ctx.getImageData(0,0,cv.width,cv.height);PAGES.push(cv.toDataURL('image/jpeg',.82));
+    const tc=await page.getTextContent();for(const it of tc.items)if(it.str)it.str=fixRad(it.str);const pw=page.view[2]-page.view[0],ph=page.view[3]-page.view[1];if(!PG)PG={w:pw,h:ph};const items=[];
+    const imgs=[];try{const ops=await page.getOperatorList();const O=pdfjsLib.OPS;let ctm=[1,0,0,1,0,0];const stack=[];const mul=(m,n)=>[m[0]*n[0]+m[2]*n[1],m[1]*n[0]+m[3]*n[1],m[0]*n[2]+m[2]*n[3],m[1]*n[2]+m[3]*n[3],m[0]*n[4]+m[2]*n[5]+m[4],m[1]*n[4]+m[3]*n[5]+m[5]];
+      for(let i=0;i<ops.fnArray.length;i++){const fn=ops.fnArray[i],a=ops.argsArray[i];if(fn===O.save)stack.push(ctm);else if(fn===O.restore)ctm=stack.pop()||ctm;else if(fn===O.transform)ctm=mul(ctm,a);else if(fn===O.paintFormXObjectBegin){stack.push(ctm);if(a&&a[0])ctm=mul(ctm,a[0])}else if(fn===O.paintFormXObjectEnd)ctm=stack.pop()||ctm;
+        else if(fn===O.paintImageXObject||fn===O.paintInlineImageXObject||fn===O.paintJpegXObject||fn===O.paintImageMaskXObject){const pts=[[0,0],[1,0],[0,1],[1,1]].map(([x,y])=>[ctm[0]*x+ctm[2]*y+ctm[4],ctm[1]*x+ctm[3]*y+ctm[5]]);const x0=Math.min(...pts.map(q=>q[0])),x1=Math.max(...pts.map(q=>q[0])),y0=Math.min(...pts.map(q=>q[1])),y1=Math.max(...pts.map(q=>q[1]));const w=x1-x0,h=y1-y0;if(w<14||h<14||w*h>pw*ph*.6)continue;if(imgs.some(m=>Math.abs(m.x0-x0)<2&&Math.abs(m.y1-y1)<2&&Math.abs(m.w-w)<2))continue;imgs.push({x0,x1,y0,y1,w,h})}}
+      for(const im of imgs){const A=vp.convertToViewportPoint(im.x0,im.y1),B=vp.convertToViewportPoint(im.x1,im.y0);const cx=Math.max(0,Math.floor(Math.min(A[0],B[0]))),cy=Math.max(0,Math.floor(Math.min(A[1],B[1]))),cw=Math.min(cv.width-cx,Math.ceil(Math.abs(B[0]-A[0]))),chh=Math.min(cv.height-cy,Math.ceil(Math.abs(B[1]-A[1])));if(cw<4||chh<4)continue;const c2=document.createElement('canvas');c2.width=cw;c2.height=chh;c2.getContext('2d').putImageData(ctx.getImageData(cx,cy,cw,chh),0,0);im.src=c2.toDataURL('image/jpeg',.85)}}catch(e){console.warn('图片识别失败',e)}
+    for(const it of tc.items){if(!('str' in it)||!it.str.trim())continue;const [a,b,c,d,e,f]=it.transform;if(Math.abs(Math.atan2(b,a))>.08){WM.add(it.str.trim());continue}chars+=it.str.trim().length;const fs=Math.hypot(c,d)||Math.hypot(a,b)||10;const w=it.width||fs*it.str.length*.5;const h=it.height||fs;
+      const P0=vp.convertToViewportPoint(e,f+h*.78),P1=vp.convertToViewportPoint(e+w,f-h*.22);const col=inkColor(img.data,img.width,img.height,Math.min(P0[0],P1[0]),Math.min(P0[1],P1[1]),Math.max(P0[0],P1[0]),Math.max(P0[1],P1[1]));
+      let fname='';try{if(page.commonObjs.has(it.fontName))fname=page.commonObjs.get(it.fontName).name||''}catch(e){}const fam=(tc.styles[it.fontName]||{}).fontFamily||'';if(/SimSun|Song|宋|FangSong|KaiTi|Kai|Mincho|Ming|Times|Georgia|Garamond|Serif/i.test(fname)||(/serif/.test(fam)&&!/sans/.test(fam)&&!fname))serif+=it.str.length;else sans+=it.str.length;const bold=/bold|black|heavy|semibold|,B$|-B$/i.test(fname)||/bold/i.test(fam);
+      items.push({s:it.str,x:e,y:f,fs,w,col,bold})}
+    items.sort((A,B)=>(B.y-A.y)||(A.x-B.x));for(let i=items.length-1;i>0;i--){const A=items[i-1],B=items[i];if(Math.abs(A.y-B.y)<A.fs*.5&&B.x<A.x+Math.max(A.w,A.fs)*.5&&(A.s===B.s||A.s.startsWith(B.s)||B.s.startsWith(A.s))){if(B.s.length>A.s.length)items[i-1]=B;items.splice(i,1)}}let cur=null;const pageLines=[];
+    for(const it of items){if(cur&&Math.abs(cur.y-it.y)<Math.max(cur.fs,it.fs)*.5){cur.items.push(it);cur.fs=Math.max(cur.fs,it.fs)}else{cur={y:it.y,fs:it.fs,items:[it],page:p,pw,ph};pageLines.push(cur)}}
+    nImgs+=imgs.filter(i=>i.src).length;for(const im of imgs)if(im.src)pageLines.push({y:im.y1,fs:10,items:[],page:p,pw,ph,img:im});pageLines.sort((A,B)=>(B.y-A.y)||((A.img?1:0)-(B.img?1:0)));lines.push(...pageLines);
+    onProgress&&onProgress(p,pdf.numPages)}
+  if(chars<40*pdf.numPages)return{html:PAGES.map(s=>`<img src="${s}" style="width:100%;display:block;margin-bottom:8px">`).join(''),text:'',pages:pdf.numPages,scanned:true,page:PG};
+  for(const l of lines){if(l.img){l.x0=l.img.x0;l.x1=l.img.x1;l.text='';continue}l.items.sort((A,B)=>A.x-B.x);for(let i=0;i<l.items.length;i++){const it=l.items[i];if(it.col)continue;const L=l.items[i-1],R=l.items[i+1];if(L&&R&&L.col&&L.col===R.col&&it.s.length<=12)it.col=L.col}l.x0=l.items[0].x;l.x1=Math.max(...l.items.map(i=>i.x+i.w));l.text=l.items.map(i=>i.s).join('')}
+  /* 去页眉页脚里的页码 */
+  const body=lines.filter(l=>l.img||!((l.y>l.ph*.95||l.y<l.ph*.05)&&/^[\s\d\/－\-第页共]*$/.test(l.text)));const tl=body.filter(l=>!l.img);if(!tl.length)return{html:PAGES.map(s=>`<img src="${s}" style="width:100%;display:block;margin-bottom:8px">`).join(''),text:'',pages:pdf.numPages,scanned:true,page:PG};
+  /* 第一页文字的四边留白（pt），导出 Word / PDF 时沿用 */
+  {const p1=tl.filter(l=>!l.page||l.page===1);if(p1.length&&PG){PG.ml=Math.min(...p1.map(l=>l.x0));PG.mr=PG.w-Math.max(...p1.map(l=>l.x1));PG.mt=PG.h-Math.max(...p1.map(l=>l.y+l.fs));PG.mb=Math.min(...p1.map(l=>l.y))}}
+  /* 正文字号（按字数加权众数）、左边界、右边界、行距 */
+  const cnt={};tl.forEach(l=>{const k=Math.round(l.fs*2)/2;cnt[k]=(cnt[k]||0)+l.text.length});const bodyFs=+Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
+  const xs=tl.map(l=>l.x0).sort((a,b)=>a-b);const left=xs[Math.floor(xs.length*.1)]||0;const rs=tl.filter(l=>Math.abs(l.fs-bodyFs)<.6).map(l=>l.x1).sort((a,b)=>a-b);const right=rs[Math.floor(rs.length*.9)]||body[0].pw*.9;
+  const gaps=[];for(let i=1;i<tl.length;i++)if(tl[i].page===tl[i-1].page){const g=tl[i-1].y-tl[i].y;if(g>0)gaps.push(g)}gaps.sort((a,b)=>a-b);const pitch=gaps[Math.floor(gaps.length/2)]||bodyFs*1.6;
+  const runsOf=items=>{const raw=[];let prev=null;for(const it of items){let s=it.s;if(prev){const gap=it.x-(prev.x+prev.w);if(gap>it.fs*.3)s=' '+s}raw.push({s,col:it.col,bold:it.bold,fs:it.fs});prev=it}
+    /* 夹在两段同色文字中间的短片段（括号、数字、空格）取不到颜色时，跟随两侧颜色 */
+    for(let i=0;i<raw.length;i++){if(raw[i].col)continue;let j=i;while(j<raw.length&&!raw[j].col)j++;const L=raw[i-1],R=raw[j];const len=raw.slice(i,j).reduce((a,r)=>a+r.s.trim().length,0);if(L&&R&&L.col&&L.col===R.col&&len<=12)for(let k=i;k<j;k++)raw[k].col=L.col;i=j}
+    const out=[];for(const r of raw){const last=out[out.length-1];if(last&&last.col===r.col&&last.bold===r.bold&&Math.abs(last.fs-r.fs)<.6)last.s+=r.s;else out.push(r)}return out};
+  const splitCols=l=>{const segs=[[l.items[0]]];for(let i=1;i<l.items.length;i++){const a=l.items[i-1],b=l.items[i];if(b.x-(a.x+a.w)>l.fs*2.2&&a.s.trim()&&b.s.trim())segs.push([b]);else segs[segs.length-1].push(b)}return segs};
+  const blocks=[];let para=null,prev=null;
+  for(const l of body){if(l.img){const im=l.img;const pw=l.pw;const right=im.x0>pw*.55&&im.w<pw*.35;const center=!right&&Math.abs((im.x0+im.x1)/2-pw/2)<pw*.08;blocks.push({img:im,right,center});para=null;prev=l;continue}
+    const ratio=l.fs/bodyFs,head=ratio>=1.25;const pw=l.pw;const center=Math.abs((l.x0+l.x1)/2-pw/2)<pw*.06&&(l.x1-l.x0)<pw*.7&&l.x0>left+pw*.08;const segs=splitCols(l);
+    const sameP=prev&&prev.page===l.page;const g=sameP?prev.y-l.y:0;const extra=sameP?g-pitch:0;
+    const wrap=para&&!para.head&&!para.cols&&!head&&segs.length===1&&prev&&prev.x1>=right-l.fs*1.3&&Math.abs(l.fs-prev.fs)<.6&&(!sameP||extra<pitch*.5)&&Math.abs(l.x0-left)<l.fs*1.6;
+    if(wrap){const rs=runsOf(l.items);if(rs.length&&!/^\s/.test(rs[0].s)&&/[A-Za-z0-9]$/.test(para.runs[para.runs.length-1].s)&&/^[A-Za-z0-9]/.test(rs[0].s))rs[0].s=' '+rs[0].s;for(const r of rs){const last=para.runs[para.runs.length-1];if(last.col===r.col&&last.bold===r.bold&&Math.abs(last.fs-r.fs)<.6)last.s+=r.s;else para.runs.push(r)}prev=l;continue}
+    para={head,center,fs:l.fs,indent:l.x0-left,mt:extra>pitch*.5?Math.min(extra,bodyFs*3):0,runs:runsOf(l.items),cols:segs.length>1?segs.map(seg=>({runs:runsOf(seg),x:seg[0].x})):null};blocks.push(para);prev=l}
+  const k=14/bodyFs;const runHtml=r=>{const st=[];if(r.col)st.push('color:'+r.col);if(r.bold)st.push('font-weight:700');return st.length?`<span style="${st.join(';')}">${esc(r.s)}</span>`:esc(r.s)};
+  /* 字号归档：相对正文的倍数归到 5 档，避免 10/10.5/11pt 这种细微差别在文档里看起来忽大忽小 */
+  const tier=r=>r<.82?12:r<1.15?0:r<1.3?16:r<1.55?19:r<1.9?22:26;
+  const html=blocks.map(b=>{if(b.img){const w=Math.round(b.img.w*k);return b.right?`<p style="margin:0;text-align:right"><img src="${b.img.src}" style="float:right;width:${w}px;margin:0 0 8px 14px"></p>`:`<p${b.center?' style="text-align:center"':''}><img src="${b.img.src}" style="width:${w}px"></p>`}
+    const st=[];const px=tier(b.fs/bodyFs);if(px)st.push(`font-size:${px}px`);if(b.center)st.push('text-align:center');if(b.indent>b.fs*.8&&!b.center)st.push(`padding-left:${Math.round(b.indent*k)}px`);if(b.mt)st.push(`margin-top:${Math.round(b.mt*k)}px`);
+    let inner;if(b.cols){inner=b.cols.map((c,i)=>{const nx=b.cols[i+1];const w=nx?Math.round((nx.x-c.x)*k):0;return `<span style="display:inline-block${w?`;min-width:${w}px`:''}">${c.runs.map(runHtml).join('')}</span>`+(nx?' ':'')}).join('')}else inner=b.runs.map(runHtml).join('');
+    return `<p${st.length?` style="${st.join(';')}"`:''}>${inner||'<br>'}</p>`}).join('');
+  const text=blocks.map(b=>b.img?'':b.cols?b.cols.map(c=>c.runs.map(r=>r.s).join('')).join('  '):b.runs.map(r=>r.s).join('')).join('\n');
+  const font=serif>sans?`font-family:'Songti SC','SimSun','Noto Serif CJK SC',serif`:'';
+  return{html:`<div${font?` style="${font}"`:''}>${html}</div>`,text,pages:pdf.numPages,scanned:false,watermark:[...WM].join(' '),images:nImgs,designed:nImgs>12,page:PG}}
+let TEXT_HTML='';
+const pagesHtml=()=>PAGES.map(s=>`<img src="${s}" style="width:100%;display:block;margin-bottom:8px">`).join('');
+function togglePageImg(){const el=$('resumeDoc');if(!PAGES.length){toast('当前没有 PDF 页面图（重新上传 PDF 后可用）');return}pushUndo(showImg?'改回可编辑文字':'按原页面图片');showImg=!showImg;if(showImg){TEXT_HTML=el.innerHTML;el.innerHTML=pagesHtml();el.contentEditable='false';toast('已切换为原页面图片（不可编辑文字，导出时按图片输出）')}else{el.innerHTML=TEXT_HTML||S.resumeHtml||'';el.contentEditable='true';toast('已改回可编辑文字')}S.resumeHtml=el.innerHTML;save();renderImgToggle()}
+function renderImgToggle(){$('imgToggle').textContent=showImg?'改回可编辑文字':'按原页面图片'}
+
+
+/* ===== 输入事件 ===== */
+let deb;function onInput(){clearTimeout(deb);deb=setTimeout(()=>{S.position=$('position').value;S.client=$('client').value;extract();refillUntouched();save();renderFields()},250)}
+['position','client'].forEach(id=>$(id).oninput=onInput);
+const drop=$('drop');['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('hover')}));['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('hover')}));
+drop.addEventListener('drop',ev=>handleFile(ev.dataTransfer.files[0]));$('file').onchange=e=>handleFile(e.target.files[0]);
+async function handleFile(f){if(!f)return;S.file=f.name;S.page=null;const done=(html,text,msg,asImg)=>{pushUndo(`读取文件「${f.name}」`);S.srcHtml=html;S.resume=text;showImg=!!asImg;TEXT_HTML=asImg?html:'';$('resumeDoc').contentEditable=asImg?'false':'true';renderImgToggle();showFile();applyPageSize();extract();refillUntouched();save();renderFields();pushResume();if(msg)toast(msg)};
+  try{if(/\.(txt|md)$/i.test(f.name)){const t=await f.text();done(textToHtml(t),t,'已读取文本')}
+  else if(/\.pdf$/i.test(f.name)){toast('正在解析 PDF，还原原始排版…');const r=await pdfToHtml(await f.arrayBuffer(),(p,n)=>$('filetag').innerHTML=`📄 ${esc(f.name)} <span class="pill p">解析第 ${p}/${n} 页</span>`);S.page=r.page||null;const wm=r.watermark?`；已去掉水印文字「${r.watermark.slice(0,20)}」`:'';if(r.scanned)done(r.html,r.text,'这份 PDF 没有文字层，已按页面图片带入');else if(r.designed)done(r.html,r.text,`这份简历是设计模板版式（${r.images} 个图片切片），已按原页面图片带入，点「改回可编辑文字」可切换${wm}`,true);else done(r.html,r.text,`已还原 ${r.pages} 页排版（字号、颜色、分栏${r.images?`、${r.images} 张图片`:''}）${wm}，可直接编辑、标红`)}
+  else if(/\.docx$/i.test(f.name)){await ensureMammoth();const res=await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()});const tmp=document.createElement('div');tmp.innerHTML=res.value;done(res.value,tmp.innerText,'已读取 Word（保留标题、加粗、列表、表格）')}
+  else{showFile();toast('旧版 .doc 无法直接解析，请另存为 .docx 或 PDF')}}
+  catch(e){console.error(e);toast('解析失败：'+(e.message||e))}}
+function showFile(){$('filetag').innerHTML=S.file?`📄 ${esc(S.file)} <span class="pill ok">已读取</span> <span class="pill ${/\.pdf$/i.test(S.file)?'':'warn'}">${/\.pdf$/i.test(S.file)?'PDF':'建议转 PDF'}</span> <a href="javascript:void 0" class="del" onclick="removeResume()" title="从文档里去掉这份简历（可撤销）">删除简历</a>`:''}
+/* 删除已上传的简历：简历区清空、未手改过的自动填充字段也清掉；文件选择框重置以便重新选同一个文件 */
+function removeResume(){if(!S.file&&!S.resume&&!$('resumeDoc').textContent.trim())return;pushUndo('删除简历');S.resume='';S.srcHtml='';S.resumeHtml='';S.file='';S.page=null;showImg=false;TEXT_HTML='';PAGES=[];$('resumeDoc').contentEditable='true';$('resumeDoc').innerHTML='';$('file').value='';S.fields.forEach(f=>{if(!f.touched)f.html=''});renderImgToggle();showFile();applyPageSize();extract();renderFields();updateMeta();save();toast('已删除简历，字段里自动填入的内容一并清空；可撤销')}
+/* 新建报告：回到刚打开时的空白状态（模板、历史、水印设置保留），可撤销 */
+function resetDoc(){const has=S.fields.length||S.resume||S.file||$('resumeDoc').textContent.trim()||S.position||S.client;if(has&&!confirm('清空当前文档，回到初始状态？（模板和历史记录保留，可用撤销找回）'))return;pushUndo('新建报告');const keep={tpls:S.tpls,hist:S.hist,wm:S.wm,wmText:S.wmText};Object.assign(S,BLANK(),keep);showImg=false;TEXT_HTML='';PAGES=[];$('file').value='';$('resumeDoc').contentEditable='true';renderImgToggle();initUI();renderTplList();toast('已新建空白报告')}
+function initUI(){S.notes='';$('position').value=S.position||'';$('client').value=S.client||'';$('wmOn').checked=!!S.wm;$('wmText').value=S.wmText||'';showFile();applyPageSize();extract();if(S.title&&S.titleTouched)$('docTitle').textContent=S.title;$('resumeDoc').innerHTML=S.resumeHtml||'';renderBreak();renderFields();renderUndo()}
+initTpls();initUI();
+</script>
+</body>
+</html>
